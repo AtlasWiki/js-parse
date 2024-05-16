@@ -2,32 +2,41 @@ import re, os, requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import jsbeautifier
+import argparse
 pretty_files = []
 
+parser = argparse.ArgumentParser()
+parser.add_argument("url", help="specify url with the scheme of http or https")
+parser.add_argument("-s", "--save", help="save prettified js files", action="store_true")
+parser.add_argument("-b", "--blacklist", help="blacklist subdomains/domains", nargs="+", default="")
+args = parser.parse_args()
 
-curr_url = input('input url: ')
-
+target_url = args.url
+print('main url: ' + target_url)
 def verify_files():
-    blacklist = ['google.com']
+
+    blacklist = args.blacklist
     custom_bar_format = "{desc}: {n}/{total} {percentage:.0f}% Current: {elapsed} Remaining: {remaining} "
-    #total_items = list(extract_files(curr_url))
-    total_items = len(list(extract_files(curr_url)))
+    total_items = len(list(extract_files(target_url)))
     
-    for js_file in tqdm(extract_files(curr_url), desc="Extracted", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
+    for js_file in tqdm(extract_files(target_url), desc="Extracted", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
        if any(domain in js_file for domain in blacklist):
            print('not extracted: ' + js_file)
            pass
        else:
             if 'http' in js_file or 'https' in js_file:
-                if curr_url in js_file:
+                if target_url in js_file:
                     print(js_file, flush=True)
                     store_urls(js_file)
             else:
                 print(js_file, flush=True)
-                store_urls(curr_url + js_file)
-
-    if(store_files()):
-        print('done')
+                store_urls(target_url + js_file)
+    if(args.save):
+        move_store_files()
+        print('saved js files')
+        print('done')   
+    else:
+        print("done")
 
 def extract_files(url):
     for tags in fetch_html(url):
@@ -61,7 +70,8 @@ def store_urls(url):
         target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
         os.mkdir(target)
         os.mkdir(target + '/parsed-urls/')
-        os.mkdir(target + '/parsed-files/')
+        if(args.save):
+            os.mkdir(target + '/parsed-files/')
 
     except FileExistsError:
         pass
@@ -98,21 +108,17 @@ def extract_urls(url):
     return unique_dirs
 
 def fetch_js(url):
-    # global body_req
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
     req = requests.get(url, headers=headers).text
     req = jsbeautifier.beautify(req)
-    pretty_files.append(url)
-    # body_req = req
-    # unique_pretty_files = list(dict.fromkeys(pretty_files))
-    # print(pretty_files)
-    with open(f"pretty-file{len(pretty_files)}.txt", 'w', encoding="utf-8") as prettyJsFile:
-        prettyJsFile.write(url + '\n') 
-        prettyJsFile.write(req) 
-    
+    if(args.save):
+        pretty_files.append(url)
+        with open(f"pretty-file{len(pretty_files)}.txt", 'w', encoding="utf-8") as prettyJsFile:
+            prettyJsFile.write(url + '\n') 
+            prettyJsFile.write(req) 
     return req
 
-def store_files():
+def move_store_files():
     for prettyfile in range(1, len(pretty_files) + 1):
         source_path = os.getcwd()
         source_filename = f"pretty-file{prettyfile}.txt"
@@ -120,25 +126,7 @@ def store_files():
         destination_dir = os.path.join(source_path, f"{target}/parsed-files")
         destination_file = os.path.join(destination_dir, source_filename)
         os.replace(source_file, destination_file)
-        # print(source_filename)
-        # print(source_file)
-        # print(destination_file)
-
-
-
-    
-
- 
-        
-    
-
-    
-
-
-        
+         
 if verify_files():
     pass
     
-
-
-
