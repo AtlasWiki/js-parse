@@ -1,6 +1,0 @@
-/
-/index.txt
-text/plain
-text/x-component
-http://n
-https://nextjs.org/docs/messages/dynamic-server-error

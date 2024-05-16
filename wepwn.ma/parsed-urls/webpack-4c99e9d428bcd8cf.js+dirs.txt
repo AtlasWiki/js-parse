@@ -1,2 +1,0 @@
-/_next/
-static/css/

@@ -1,5 +1,0 @@
-/Researchers
-/_next/static/media/Vector.03c3407f.svg
-/_next/static/media/Vector2.6f7fb508.svg
-/_next/static/media/Vector3.3f0b5a58.svg
-https://api.wepwn.ma/contact
