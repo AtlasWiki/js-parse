@@ -33,16 +33,13 @@ f'''
 \u001b[91mmulti-file:\u001b[0m python {get_py_filename } https://youtube.com -i   
 ''', formatter_class=NewlineFormatter, usage=f'{logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
 
-
-
 parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
 parser.add_argument("-s", "--save", help="save prettified js files", action="store_true")
 parser.add_argument("-b", "--blacklist", help="blacklist subdomains/domains", nargs="+", default="")
-# group = parser.add_mutually_exclusive_group()
-# group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
-# group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
+group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
 args = parser.parse_args()
-
 
 print(logo)
 target_url = args.url
@@ -104,10 +101,12 @@ def store_urls(url):
         global target
         global file_name
         target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
-        os.mkdir(target)
-        os.mkdir(target + '/parsed-urls/')
-        if(args.save):
-            os.mkdir(target + '/parsed-files/')
+        
+        if (args.isolate or args.merge):
+            os.mkdir(target)
+            os.mkdir(target + '/parsed-urls/')
+            if(args.save):
+                os.mkdir(target + '/parsed-files/')
 
     except FileExistsError:
         pass
@@ -116,19 +115,35 @@ def store_urls(url):
    
     for quoted_dir in extract_urls(url):
         try:
-            dir = quoted_dir.strip('"')
-            with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
-                directories.write(dir + '\n')
+            if (args.isolate):
+                dir = quoted_dir.strip('"')
+                with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
+                    directories.write(dir + '\n')
+            elif (args.merge):
+                dir = quoted_dir.strip('"')
+                with open(f"{target}/parsed-urls/urls+dirs.txt", "a", encoding="utf-8") as directories:
+                    directories.write(dir + '\n')
+            else:
+                dir = quoted_dir.strip('"')
+                print(dir)
+            
 
         except FileNotFoundError:
             directory_path = f"{target}/parsed-js/"
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
             dir = quoted_dir.strip('"')
-            file = open(f"{target}/parsed-js/{file_name}+dirs.txt", "w")
-            file.close()
-            with open(f"{target}/parsed-js/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
-                directories.write(dir + '\n')
+
+            if(args.isolate):
+                file = open(f"{target}/parsed-js/{file_name}+dirs.txt", "w")
+                file.close()
+                with open(f"{target}/parsed-js/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
+                    directories.write(dir + '\n')
+            if(args.merge):
+                file = open(f"{target}/parsed-js/urls+dirs.txt", "w")
+                file.close()
+                with open(f"{target}/parsed-js/urls+dirs.txt", "a", encoding="utf-8") as directories:
+                    directories.write(dir + '\n')
 
 def extract_urls(url):
     req = fetch_js(url)
