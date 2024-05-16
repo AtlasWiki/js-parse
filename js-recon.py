@@ -4,6 +4,8 @@ from tqdm import tqdm
 import jsbeautifier
 import argparse
 pretty_files = []
+target= ""
+file_name = ""
 
 parser = argparse.ArgumentParser()
 parser.add_argument("url", help="specify url with the scheme of http or https")
@@ -34,9 +36,12 @@ def verify_files():
     if(args.save):
         move_store_files()
         print('saved js files')
-        print('done')   
+        print('done')
+        print(pretty_files)   
     else:
         print("done")
+        print(pretty_files)
+    
 
 def extract_files(url):
     for tags in fetch_html(url):
@@ -67,6 +72,7 @@ def fetch_html(url):
 def store_urls(url):
     try:
         global target
+        global file_name
         target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
         os.mkdir(target)
         os.mkdir(target + '/parsed-urls/')
@@ -76,8 +82,7 @@ def store_urls(url):
     except FileExistsError:
         pass
     except AttributeError:
-        file_name = url
-        return file_name
+        pass
    
     for quoted_dir in extract_urls(url):
         try:
@@ -126,6 +131,7 @@ def move_store_files():
         destination_dir = os.path.join(source_path, f"{target}/parsed-files")
         destination_file = os.path.join(destination_dir, source_filename)
         os.replace(source_file, destination_file)
+    
          
 if verify_files():
     pass
