@@ -3,22 +3,54 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 import jsbeautifier
 import argparse
+import colorama
+
 pretty_files = []
+get_py_filename = os.path.basename(__file__)
 target= ""
 file_name = ""
+logo = """\u001b[31m
 
-parser = argparse.ArgumentParser()
-parser.add_argument("url", help="specify url with the scheme of http or https")
+░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
+░░░░░██║██╔════╝░░░░░░██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
+░░░░░██║╚█████╗░█████╗██████╔╝███████║██████╔╝╚█████╗░█████╗░░
+██╗░░██║░╚═══██╗╚════╝██╔═══╝░██╔══██║██╔══██╗░╚═══██╗██╔══╝░░
+╚█████╔╝██████╔╝░░░░░░██║░░░░░██║░░██║██║░░██║██████╔╝███████╗
+░╚════╝░╚═════╝░░░░░░░╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═════╝░╚══════╝
+      
+
+
+
+
+--------------------------------------------------------------\u001b[0m"""
+class NewlineFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
+    pass
+
+parser = argparse.ArgumentParser(prog= f"python {get_py_filename}", description='\u001b[96mdescription: parses urls from js files', epilog=
+f'''
+\u001b[91mbasic usage:\u001b[0m python {get_py_filename } https://youtube.com
+\u001b[91msingle file:\u001b[0m python {get_py_filename } https://youtube.com -m
+\u001b[91mmulti-file:\u001b[0m python {get_py_filename } https://youtube.com -i   
+''', formatter_class=NewlineFormatter, usage=f'{logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
+
+
+
+parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
 parser.add_argument("-s", "--save", help="save prettified js files", action="store_true")
 parser.add_argument("-b", "--blacklist", help="blacklist subdomains/domains", nargs="+", default="")
+# group = parser.add_mutually_exclusive_group()
+# group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
+# group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
 args = parser.parse_args()
 
+
+print(logo)
 target_url = args.url
 print('main url: ' + target_url)
 def verify_files():
 
     blacklist = args.blacklist
-    custom_bar_format = "{desc}: {n}/{total} {percentage:.0f}% Current: {elapsed} Remaining: {remaining} "
+    custom_bar_format = "\033[32m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}] "
     total_items = len(list(extract_files(target_url)))
     
     for js_file in tqdm(extract_files(target_url), desc="Extracted", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
@@ -37,10 +69,8 @@ def verify_files():
         move_store_files()
         print('saved js files')
         print('done')
-        print(pretty_files)   
     else:
         print("done")
-        print(pretty_files)
     
 
 def extract_files(url):
@@ -89,15 +119,14 @@ def store_urls(url):
             dir = quoted_dir.strip('"')
             with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
                 directories.write(dir + '\n')
+
         except FileNotFoundError:
             directory_path = f"{target}/parsed-js/"
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
-
             dir = quoted_dir.strip('"')
             file = open(f"{target}/parsed-js/{file_name}+dirs.txt", "w")
             file.close()
-
             with open(f"{target}/parsed-js/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
                 directories.write(dir + '\n')
 
