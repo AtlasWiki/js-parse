@@ -1,5 +1,5 @@
 jsbeautifier==1.15.1
-﻿beautifulsoup4==4.11.1
+beautifulsoup4==4.11.1
 bs4==0.0.1
 requests==2.31.0
 selenium==4.8.3

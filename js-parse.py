@@ -3,12 +3,13 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 import jsbeautifier
 import argparse
-import colorama
+import time
 
 pretty_files = []
 get_py_filename = os.path.basename(__file__)
 target= ""
 file_name = ""
+all_dirs=[]
 logo = """\u001b[31m
 
 ░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
@@ -49,25 +50,42 @@ def verify_files():
     blacklist = args.blacklist
     custom_bar_format = "\033[32m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}] "
     total_items = len(list(extract_files(target_url)))
-    
-    for js_file in tqdm(extract_files(target_url), desc="Extracted", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
-       if any(domain in js_file for domain in blacklist):
-           print('not extracted: ' + js_file)
-           pass
-       else:
-            if 'http' in js_file or 'https' in js_file:
-                if target_url in js_file:
-                    print(js_file, flush=True)
-                    store_urls(js_file)
+    if(args.merge or args.isolate):
+        for js_file in tqdm(extract_files(target_url), desc="Extracted", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
+            if any(domain in js_file for domain in blacklist):
+                print('not extracted: ' + js_file)
+                pass
             else:
-                print(js_file, flush=True)
-                store_urls(target_url + js_file)
+                    if 'http' in js_file or 'https' in js_file:
+                        if target_url in js_file:
+                            print(js_file, flush=True)
+                            store_urls(js_file)
+                    else:
+                        print(js_file, flush=True)
+                        store_urls(target_url + js_file)
+    else:
+        for js_file in extract_files(target_url):
+            if any(domain in js_file for domain in blacklist):
+                print('not extracted: ' + js_file)
+                pass
+            else:
+                if 'http' in js_file or 'https' in js_file:
+                    if target_url in js_file:
+                        store_urls(js_file)
+                else:
+                    store_urls(target_url + js_file)
+
+        unique_dirs = list(dict.fromkeys(all_dirs))
+        for unique_dir in unique_dirs:
+            print(unique_dir)
+    
+
+
+            
     if(args.save):
         move_store_files()
         print('saved js files')
         print('done')
-    else:
-        print("done")
     
 
 def extract_files(url):
@@ -100,14 +118,22 @@ def store_urls(url):
     try:
         global target
         global file_name
+        parsed_js_directory_path = f"{target}/parsed-urls/"
+        parsed_files_directory_path = f"{target}/parsed-files/"
+
         target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
         
+      
         if (args.isolate or args.merge):
-            os.mkdir(target)
-            os.mkdir(target + '/parsed-urls/')
+            try:
+                os.mkdir(target)
+            except FileExistsError:
+                pass
+            except FileNotFoundError:
+                os.mkdir(parsed_js_directory_path)
             if(args.save):
-                os.mkdir(target + '/parsed-files/')
-
+                os.mkdir(parsed_files_directory_path)
+                    
     except FileExistsError:
         pass
     except AttributeError:
@@ -121,29 +147,34 @@ def store_urls(url):
                     directories.write(dir + '\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
-                with open(f"{target}/parsed-urls/urls+dirs.txt", "a", encoding="utf-8") as directories:
+                with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
                     directories.write(dir + '\n')
             else:
                 dir = quoted_dir.strip('"')
-                print(dir)
-            
-
+                all_dirs.append(dir)
+        
         except FileNotFoundError:
-            directory_path = f"{target}/parsed-js/"
-            if not os.path.exists(directory_path):
-                os.makedirs(directory_path)
+            parsed_js_directory_path = f"{target}/parsed-urls/"
+            if not (os.path.exists(parsed_js_directory_path)) :
+                os.makedirs(parsed_js_directory_path)
+
             dir = quoted_dir.strip('"')
 
             if(args.isolate):
-                file = open(f"{target}/parsed-js/{file_name}+dirs.txt", "w")
+                file = open(f"{target}/parsed-urls/{file_name}+dirs.txt", "w")
                 file.close()
-                with open(f"{target}/parsed-js/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
+                with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
                     directories.write(dir + '\n')
             if(args.merge):
-                file = open(f"{target}/parsed-js/urls+dirs.txt", "w")
+                file = open(f"{target}/parsed-urls/all_urls.txt", "w")
                 file.close()
-                with open(f"{target}/parsed-js/urls+dirs.txt", "a", encoding="utf-8") as directories:
+                with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
                     directories.write(dir + '\n')
+        finally:
+             if(args.save):
+                parsed_files_directory_path = f"{target}/parsed-files/"
+                if not (os.path.exists(parsed_files_directory_path)):
+                    os.makedirs(parsed_files_directory_path)
 
 def extract_urls(url):
     req = fetch_js(url)
