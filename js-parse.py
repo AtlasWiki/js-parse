@@ -228,8 +228,8 @@ def move_store_files():
         destination_dir = os.path.join(source_path, f"{target}/parsed-files")
         destination_file = os.path.join(destination_dir, source_filename)
         os.replace(source_file, destination_file)
-    
-         
-if verify_files():
+
+if __name__ == "__main__":
+    verify_files()
     pass
-    
+
