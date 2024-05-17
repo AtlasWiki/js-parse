@@ -37,6 +37,7 @@ f'''
 parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
 parser.add_argument("-s", "--save", help="save prettified js files", action="store_true")
 parser.add_argument("-b", "--blacklist", help="blacklist subdomains/domains", nargs="+", default="")
+parser.add_argument("-n", "--nologo", help="do not display logo, this supports stdout/output to a file", action="store_true")
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
 group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
@@ -56,10 +57,14 @@ intro_logo = f"""\u001b[31m
 {('parsing webpage: ' + target_url)}
 
 --------------------------------------------------------------\u001b[0m"""
-print(intro_logo)
+if (args.nologo):
+    pass
+else:
+    print(intro_logo)
+
+
 
 def verify_files():
-
     blacklist = args.blacklist
     custom_bar_format = "\033[32m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}] "
     total_items = len(list(extract_files(target_url)))
@@ -92,9 +97,6 @@ def verify_files():
         for unique_dir in unique_dirs:
             print(unique_dir)
     
-
-
-            
     if(args.save):
         move_store_files()
         print('saved js files')
@@ -202,9 +204,7 @@ def extract_urls(url):
     return unique_dirs
 
 def write_urls(option):
-    
     unique_dirs = list(dict.fromkeys(all_dirs))
-    print(len(unique_dirs))
     # with open(option, "w", encoding="utf-8") as directories:
     #         directories.write("")
     for unique_dir in unique_dirs:
