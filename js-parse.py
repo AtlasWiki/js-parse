@@ -10,7 +10,7 @@ get_py_filename = os.path.basename(__file__)
 target= ""
 file_name = ""
 all_dirs=[]
-logo = """\u001b[31m
+intro_logo = f"""\u001b[31m
 
 ░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
 ░░░░░██║██╔════╝░░░░░░██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
@@ -32,7 +32,7 @@ f'''
 \u001b[91mbasic usage:\u001b[0m python {get_py_filename } https://youtube.com
 \u001b[91msingle file:\u001b[0m python {get_py_filename } https://youtube.com -m
 \u001b[91mmulti-file:\u001b[0m python {get_py_filename } https://youtube.com -i   
-''', formatter_class=NewlineFormatter, usage=f'{logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
+''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
 
 parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
 parser.add_argument("-s", "--save", help="save prettified js files", action="store_true")
@@ -41,10 +41,23 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
 group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
 args = parser.parse_args()
-
-print(logo)
 target_url = args.url
-print('main url: ' + target_url)
+intro_logo = f"""\u001b[31m
+
+░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
+░░░░░██║██╔════╝░░░░░░██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
+░░░░░██║╚█████╗░█████╗██████╔╝███████║██████╔╝╚█████╗░█████╗░░
+██╗░░██║░╚═══██╗╚════╝██╔═══╝░██╔══██║██╔══██╗░╚═══██╗██╔══╝░░
+╚█████╔╝██████╔╝░░░░░░██║░░░░░██║░░██║██║░░██║██████╔╝███████╗
+░╚════╝░╚═════╝░░░░░░░╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═════╝░╚══════╝
+      
+
+
+{('parsing webpage: ' + target_url)}
+
+--------------------------------------------------------------\u001b[0m"""
+print(intro_logo)
+
 def verify_files():
 
     blacklist = args.blacklist
@@ -122,7 +135,8 @@ def store_urls(url):
         parsed_files_directory_path = f"{target}/parsed-files/"
 
         target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
-        
+        merged_js_file = f"{target}/parsed-urls/all_urls.txt"
+        isolated_js_file = f"{target}/parsed-urls/{file_name}+dirs.txt"
       
         if (args.isolate or args.merge):
             try:
@@ -143,12 +157,12 @@ def store_urls(url):
         try:
             if (args.isolate):
                 dir = quoted_dir.strip('"')
-                with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
+                all_dirs.append(dir)
+                write_urls(isolated_js_file)
             elif (args.merge):
                 dir = quoted_dir.strip('"')
-                with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
+                all_dirs.append(dir)
+                write_urls(merged_js_file)
             else:
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
@@ -161,15 +175,15 @@ def store_urls(url):
             dir = quoted_dir.strip('"')
 
             if(args.isolate):
-                file = open(f"{target}/parsed-urls/{file_name}+dirs.txt", "w")
+                all_dirs.append(dir)
+                file = open(isolated_js_file, "w")
                 file.close()
-                with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
+                write_urls(isolated_js_file)
             if(args.merge):
-                file = open(f"{target}/parsed-urls/all_urls.txt", "w")
+                all_dirs.append(dir)
+                file = open(merged_js_file, "w")
                 file.close()
-                with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
+                write_urls(merged_js_file)
         finally:
              if(args.save):
                 parsed_files_directory_path = f"{target}/parsed-files/"
@@ -186,6 +200,14 @@ def extract_urls(url):
     unique_dirs = list(dict.fromkeys(all_dirs))
     unique_dirs.sort()
     return unique_dirs
+
+def write_urls(option):
+    unique_dirs = list(dict.fromkeys(all_dirs))
+    with open(option, "w", encoding="utf-8") as directories:
+            directories.write("")
+    for unique_dir in unique_dirs:
+        with open(option, "a", encoding="utf-8") as directories:
+            directories.write(unique_dir + '\n')
 
 def fetch_js(url):
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
