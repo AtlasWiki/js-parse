@@ -202,9 +202,11 @@ def extract_urls(url):
     return unique_dirs
 
 def write_urls(option):
+    
     unique_dirs = list(dict.fromkeys(all_dirs))
-    with open(option, "w", encoding="utf-8") as directories:
-            directories.write("")
+    print(len(unique_dirs))
+    # with open(option, "w", encoding="utf-8") as directories:
+    #         directories.write("")
     for unique_dir in unique_dirs:
         with open(option, "a", encoding="utf-8") as directories:
             directories.write(unique_dir + '\n')
