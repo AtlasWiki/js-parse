@@ -10,6 +10,7 @@ get_py_filename = os.path.basename(__file__)
 target= ""
 file_name = ""
 all_dirs=[]
+file_checked= False
 intro_logo = f"""\u001b[31m
 
 ░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
@@ -57,12 +58,6 @@ intro_logo = f"""\u001b[31m
 {('parsing webpage: ' + target_url)}
 
 --------------------------------------------------------------\u001b[0m"""
-if (args.nologo):
-    pass
-else:
-    print(intro_logo)
-
-
 
 def verify_files():
     blacklist = args.blacklist
@@ -149,7 +144,7 @@ def store_urls(url):
                 os.mkdir(parsed_js_directory_path)
             if(args.save):
                 os.mkdir(parsed_files_directory_path)
-                    
+
     except FileExistsError:
         pass
     except AttributeError:
@@ -205,11 +200,12 @@ def extract_urls(url):
 
 def write_urls(option):
     unique_dirs = list(dict.fromkeys(all_dirs))
-    # with open(option, "w", encoding="utf-8") as directories:
-    #         directories.write("")
+    with open(option, "w", encoding="utf-8") as directories:
+            directories.write("")
     for unique_dir in unique_dirs:
         with open(option, "a", encoding="utf-8") as directories:
             directories.write(unique_dir + '\n')
+
 
 def fetch_js(url):
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
@@ -232,6 +228,10 @@ def move_store_files():
         os.replace(source_file, destination_file)
 
 if __name__ == "__main__":
+    if (args.nologo):
+        pass
+    else:
+        print(intro_logo)
     verify_files()
     pass
 
