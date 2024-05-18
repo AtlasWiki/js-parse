@@ -65,17 +65,19 @@ def verify_files():
         process_files_with_tqdm()
         if (args.merge):
             write_files()
+        print(f'parsed: ${len(all_dirs)} urls')
     elif(args.stdout):
         process_files_without_tqdm()
         stdout_dirs()
     else:
         process_files_with_tqdm()
         stdout_dirs()
+        print(f'\n\n\n***parsed: {len(all_dirs)} urls***')
     if(args.save):
         move_stored_files()
         print('saved js files')
         print('done')
-        
+    
 def process_files():
     blacklist = args.blacklist
     custom_bar_format = "\033[32m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}] "
@@ -213,7 +215,6 @@ def process_files_with_tqdm():
     total_items = len(list(extract_files(target_url)))
     for js_file in tqdm(extract_files(target_url), desc="Extracted", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
         if any(domain in js_file for domain in blacklist):
-            print('not extracted: ' + js_file)
             pass
         else:
                 if 'http' in js_file or 'https' in js_file:
@@ -228,12 +229,10 @@ def process_files_without_tqdm():
     blacklist = args.blacklist
     for js_file in extract_files(target_url):
         if any(domain in js_file for domain in blacklist):
-            print('not extracted: ' + js_file)
             pass
         else:
                 if 'http' in js_file or 'https' in js_file:
                     if target_url in js_file:
-                        print(js_file, flush=True)
                         store_urls(js_file)
                 else:
                     store_urls(target_url + js_file)
