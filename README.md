@@ -7,10 +7,11 @@
 <br>
 
 ## Key Features:
-+ **Stdout:** basic printing of urls to stdout.
++ **Stdout-Friendly:** basic printing of only urls to stdout.
 + **Downloading:** allows you to download js files that are in a beautified format.
 + **File Management:** allows an organized structure of storing the files and urls.
-+ **File Association:** parses the name of the js file and writes the associated urls to them.
++ **File Association:** parses the name of the js files and writes the associated urls to them.
++ **Upcoming feature:** verifies urls and removes false positives.
 <br>
 
 ## Installation:
