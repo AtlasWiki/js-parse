@@ -1,5 +1,6 @@
 # JS-Parse 
-  A tool that is used for parsing urls and endpoints from javascript files. 
+  A tool that is used for parsing urls and endpoints from javascript files.
+  It extracts urls from individual js files linked to the current webpage.
   JS-Parse has a few flexible features - basic stdout, blacklisting unwanted third party js files, downloading beautified js files, organized multi-file saving, and single file saving.
   
   Created by mrunoriginal/AtlasWiki
