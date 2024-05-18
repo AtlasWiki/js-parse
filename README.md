@@ -12,7 +12,7 @@
 + **Downloading:** allows you to download js files that are in a beautified format.
 + **File Management:** allows an organized structure of storing the files and urls.
 + **File Association:** parses the name of the js files and writes the associated urls to them.
-+ **Upcoming feature:** verifies urls and removes false positives.
++ **Upcoming feature:** verifies urls and removes false positives and filtering out third-party urls.
 <br>
 
 ## Installation:
