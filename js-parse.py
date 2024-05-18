@@ -8,7 +8,7 @@ import time
 pretty_files = []
 get_py_filename = os.path.basename(__file__)
 target= ""
-file_name = ""
+
 all_dirs=[]
 file_checked= False
 intro_logo = f"""\u001b[31m
@@ -76,8 +76,11 @@ def verify_files():
                     else:
                         print(js_file, flush=True)
                         store_urls(target_url + js_file)
+        if(args.merge):
+            write_files()
+
     else:
-        for js_file in extract_files(target_url):
+        for js_file in tqdm(extract_files(target_url)):
             if any(domain in js_file for domain in blacklist):
                 print('not extracted: ' + js_file)
                 pass
@@ -87,11 +90,8 @@ def verify_files():
                         store_urls(js_file)
                 else:
                     store_urls(target_url + js_file)
-
-        unique_dirs = list(dict.fromkeys(all_dirs))
-        for unique_dir in unique_dirs:
-            print(unique_dir)
-    
+        stdout_dirs()
+   
     if(args.save):
         move_store_files()
         print('saved js files')
@@ -127,18 +127,15 @@ def fetch_html(url):
 def store_urls(url):
     try:
         global target
-        global file_name
+        target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
         parsed_js_directory_path = f"{target}/parsed-urls/"
         parsed_files_directory_path = f"{target}/parsed-files/"
-        target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
-      
+
         if (args.isolate or args.merge):
             try:
-                os.mkdir(target)
+                os.makedirs(parsed_js_directory_path)
             except FileExistsError:
                 pass
-            except FileNotFoundError:
-                os.mkdir(parsed_js_directory_path)
             if(args.save):
                 os.mkdir(parsed_files_directory_path)
 
@@ -155,29 +152,10 @@ def store_urls(url):
                     directories.write(dir + '\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
-                with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
+                all_dirs.append(dir)
             else:
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
-        
-        except FileNotFoundError:
-            parsed_js_directory_path = f"{target}/parsed-urls/"
-            if not (os.path.exists(parsed_js_directory_path)) :
-                os.makedirs(parsed_js_directory_path)
-
-            dir = quoted_dir.strip('"')
-
-            if(args.isolate):
-                file = open(f"{target}/parsed-urls/{file_name}+dirs.txt", "w")
-                file.close()
-                with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
-            if(args.merge):
-                file = open(f"{target}/parsed-urls/all_urls.txt", "w")
-                file.close()
-                with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
         finally:
              if(args.save):
                 parsed_files_directory_path = f"{target}/parsed-files/"
@@ -214,6 +192,25 @@ def move_store_files():
         destination_dir = os.path.join(source_path, f"{target}/parsed-files")
         destination_file = os.path.join(destination_dir, source_filename)
         os.replace(source_file, destination_file)
+
+def write_files():
+    remove_dupes()
+    with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
+        for unique_dir in all_dirs:
+            directories.write('')
+    with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
+        for unique_dir in all_dirs:
+            directories.write(unique_dir + '\n')
+
+def stdout_dirs():
+    remove_dupes()
+    for dir in all_dirs:
+        print(dir)
+
+def remove_dupes():
+    global all_dirs
+    all_dirs = list(dict.fromkeys(all_dirs))
+    return all_dirs
 
 if __name__ == "__main__":
     if (args.nologo):
