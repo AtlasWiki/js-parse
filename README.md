@@ -19,7 +19,7 @@
 
 clone the repo
 ```
-git clone `https://github.com/AtlasWiki/js-parse.git
+git clone https://github.com/AtlasWiki/js-parse.git
 ```
 install the dependencies
 ```
