@@ -3,14 +3,11 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 import jsbeautifier
 import argparse
-import time
 
 pretty_files = []
 get_py_filename = os.path.basename(__file__)
 target= ""
-
 all_dirs=[]
-file_checked= False
 intro_logo = f"""\u001b[31m
 
 ░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
