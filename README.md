@@ -29,6 +29,7 @@ pip install -r requirements.txt
 -s, --save            save prettified js files (default: False)
 -b BLACKLIST [BLACKLIST ...], --blacklist BLACKLIST [BLACKLIST ...]
                       blacklist subdomains/domains (default: )
+-S, --stdout          stdout friendly, displays urls only in stdout (default: False)
 -m, --merge           create file and merge all urls into it (default: False)
 -i, --isolate         create multiple files and store urls where they were parsed from (default: False)
 ```
@@ -37,13 +38,20 @@ pip install -r requirements.txt
 ```
 basic usage: python js-parse.py https://youtube.com
 ```
-![image](https://github.com/AtlasWiki/js-parse/assets/87085506/323912b4-f6aa-4f44-aa52-38799599ac54)
+![image](https://github.com/AtlasWiki/js-parse/assets/87085506/0310f684-347f-4402-8e11-13f33b49d22b)
 <br>
 
 ```
 single-file: python js-parse.py https://youtube.com -m
 ```
 ![image](https://github.com/AtlasWiki/js-parse/assets/87085506/e2103af4-85b3-4a70-ac7e-d29800c5149c)
+<br>
+
+
+```
+std-out: python js-parse.py https://youtube.com -S
+```
+<img width="718" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/24408419-15b3-43e3-bcc6-755c622c0b0c">
 <br>
 <br>
 
