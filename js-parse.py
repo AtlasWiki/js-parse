@@ -75,23 +75,6 @@ def verify_files():
         print('saved js files')
         print('done')
     
-def process_files():
-    blacklist = args.blacklist
-    custom_bar_format = "\033[32m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}] "
-    total_items = len(list(extract_files(target_url)))
-    for js_file in tqdm(extract_files(target_url), desc="Extracted", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
-        if any(domain in js_file for domain in blacklist):
-            print('not extracted: ' + js_file)
-            pass
-        else:
-                if 'http' in js_file or 'https' in js_file:
-                    if target_url in js_file:
-                        print(js_file, flush=True)
-                        store_urls(js_file)
-                else:
-                    print(js_file, flush=True)
-                    store_urls(target_url + js_file)
-
 def extract_files(url):
     for tags in fetch_html(url):
         try: 
