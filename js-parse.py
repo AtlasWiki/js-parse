@@ -29,7 +29,8 @@ parser = argparse.ArgumentParser(prog= f"python {get_py_filename}", description=
 f'''
 \u001b[91mbasic usage:\u001b[0m python {get_py_filename } https://youtube.com
 \u001b[91msingle file:\u001b[0m python {get_py_filename } https://youtube.com -m
-\u001b[91mmulti-file:\u001b[0m python {get_py_filename } https://youtube.com -i   
+\u001b[91mmulti-file:\u001b[0m python {get_py_filename } https://youtube.com -i
+\u001b[91mstdout:\u001b[0m python {get_py_filename } https://youtube.com -S   
 ''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
 
 parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
@@ -82,7 +83,6 @@ def extract_files(url):
             yield js_file
         except KeyError:
             pass
-
 
 def fetch_html(url):
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
