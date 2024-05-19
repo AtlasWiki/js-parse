@@ -64,7 +64,7 @@ def verify_files():
         process_files_with_tqdm()
         if (args.merge):
             write_files()
-        print(f'parsed: ${len(all_dirs)} urls')
+        print(f'parsed: {len(all_dirs)} urls')
     elif(args.stdout):
         process_files_without_tqdm()
         stdout_dirs()
