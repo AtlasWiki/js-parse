@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import re, os, requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
