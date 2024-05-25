@@ -69,10 +69,17 @@ intro_logo = f"""\u001b[31m
 
 def verify_files():
     if (args.merge or args.isolate):
-        process_files_with_tqdm()
-        if (args.merge):
+        if (args.merge and args.stdout):
+            process_files_without_tqdm()
             write_files()
-        print(f'parsed: {len(all_dirs)} urls')
+            stdout_dirs()
+        elif (args.merge):
+            process_files_with_tqdm()
+            write_files()
+            print(f'parsed: {len(all_dirs)} urls')
+        else:
+            process_files_with_tqdm()
+            print(f'parsed: {len(all_dirs)} urls')
     elif(args.stdout):
         process_files_without_tqdm()
         stdout_dirs()
@@ -179,7 +186,9 @@ def move_stored_files():
 
 def write_files():
     remove_dupes()
-    if (args.filter):
+    if (args.filter and args.stdout):
+        filter_urls_without_tqdm()
+    else:
         filter_urls_with_tqdm()
     with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
         directories.write('')
@@ -232,25 +241,40 @@ def filter_urls_without_tqdm():
     for dir in all_dirs[:]:
         try:
             if (dir[:4] == "http"):
-                get_status, post_status = httpx.get(dir, follow_redirects=True).status_code, httpx.post(dir, follow_redirects=True).status_code
-              
+                dir = dir
+                get_response = httpx.get(dir, follow_redirects=True)
+                get_status = get_response.status_code 
+                get_header = get_response.headers.get("Content-Type")
+                post_status = httpx.post(args.url + dir, follow_redirects=True).status_code
+                
             elif (dir[0] != "/"):
-                get_status, post_status = httpx.get(args.url + f'/{dir}', follow_redirects=True).status_code, httpx.post(args.url + f'/{dir}', follow_redirects=True).status_code
+                dir = args.url + f'/{dir}'
+                get_response = httpx.get(dir, follow_redirects=True)
+                get_status = get_response.status_code
+                get_header = get_response.headers.get("Content-Type")
+                post_status = httpx.post(args.url + f'/{dir}', follow_redirects=True).status_code
                     
             else:
-                get_status, post_status = httpx.get(args.url + dir, follow_redirects=True).status_code, httpx.post(args.url + dir, follow_redirects=True).status_code
-            
+                dir = args.url + dir
+                get_response = httpx.get(dir, follow_redirects=True)
+                get_status = get_response.status_code 
+                get_header = get_response.headers.get("Content-Type")
+                post_status = httpx.post(args.url + dir, follow_redirects=True).status_code
+
             if (get_status == 404 and post_status == 404):
                 all_dirs.remove(dir)
+            elif (get_status != 404 and post_status != 404 and post_status != 405):
+                pass
             elif (post_status != 405 and post_status != 404):
                 pass
             elif (get_status != 404):
                 pass
             else:
-                all_dirs.remove(dir)
-                
+                all_dirs.remove(dir)       
         except:
             all_dirs.remove(dir)
+        
+        
 
 def filter_urls_with_tqdm():
     print('\nVerifying URLS, please wait')
