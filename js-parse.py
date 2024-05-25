@@ -40,6 +40,7 @@ parser.add_argument("-s", "--save", help="save prettified js files", action="sto
 parser.add_argument("-b", "--blacklist", help="blacklist subdomains/domains", nargs="+", default="")
 parser.add_argument("-S", "--stdout", help="stdout friendly, displays urls only in stdout", action="store_true")
 parser.add_argument("-f", "--filter", help="removes false positives with httpx/requests (use at your own risk)", action="store_true")
+parser.add_argument("-k", "--kontrol", help="removes false positives with httpx/requests (use at your own risk)", choices=['ALL', 'API', 'FORBIDDEN'])
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
@@ -269,6 +270,8 @@ def filter_urls_with_tqdm():
             if (get_status == 404 and post_status == 404):
                 all_dirs.remove(dir)
                 print(dir + " " * 2 + f"{ [get_status]}  [GET]", flush=True)
+            elif (get_status != 404 and post_status != 404 and post_status != 405):
+                print(dir + " " * 2 + f"{ [get_status]} {[post_status]}  [GET] [POST]", flush=True)
             elif (post_status != 405 and post_status != 404):
                 print(dir + " " * 2 + f"{ [post_status]}  [POST]", flush=True)
             elif (get_status != 404):
