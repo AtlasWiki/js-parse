@@ -241,25 +241,24 @@ def filter_urls_without_tqdm():
     for dir in all_dirs[:]:
         try:
             if (dir[:4] == "http"):
-                dir = dir
                 get_response = httpx.get(dir, follow_redirects=True)
                 get_status = get_response.status_code 
                 get_header = get_response.headers.get("Content-Type")
                 post_status = httpx.post(dir, follow_redirects=True).status_code
                 
             elif (dir[0] != "/"):
-                dir = args.url + f'/{dir}'
-                get_response = httpx.get(dir, follow_redirects=True)
+                formatted_dir = args.url + f'/{dir}'
+                get_response = httpx.get(formatted_dir, follow_redirects=True)
                 get_status = get_response.status_code
                 get_header = get_response.headers.get("Content-Type")
-                post_status = httpx.post(dir, follow_redirects=True).status_code
+                post_status = httpx.post(formatted_dir, follow_redirects=True).status_code
                     
             else:
-                dir = args.url + dir
-                get_response = httpx.get(dir, follow_redirects=True)
+                formatted_dir = args.url + dir
+                get_response = httpx.get(formatted_dir, follow_redirects=True)
                 get_status = get_response.status_code 
                 get_header = get_response.headers.get("Content-Type")
-                post_status = httpx.post(dir, follow_redirects=True).status_code
+                post_status = httpx.post(formatted_dir, follow_redirects=True).status_code
 
             if (get_status == 404 and post_status == 404):
                 all_dirs.remove(dir)
@@ -270,12 +269,16 @@ def filter_urls_without_tqdm():
             elif (get_status != 404):
                 pass
             else:
-                pass     
+                print(dir + " " * 2  + f"""\033[31m {str([get_status])}  [GET]\033[0m""", flush=True)
+                # removes relative urls
+                if (dir[0] != "/" or dir[0] == "/"):
+                    print("has to remove: " + dir)
+                    all_dirs.remove(dir)
+        # removes absolute urls, controls bad addr exception                 
         except:
             all_dirs.remove(dir)
         
         
-
 def filter_urls_with_tqdm():
     print('\nVerifying URLS, please wait')
     custom_bar_format = "\033[32m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] "
@@ -283,51 +286,55 @@ def filter_urls_with_tqdm():
     for dir in tqdm(all_dirs[:], desc="Verifying", unit='URL', total=total_items, bar_format=custom_bar_format, position=0, dynamic_ncols=True, leave=True):
         try:
             if (dir[:4] == "http"):
-                dir = dir
                 get_response = httpx.get(dir, follow_redirects=True)
                 get_status = get_response.status_code 
                 get_header = get_response.headers.get("Content-Type")
                 post_status = httpx.post(dir, follow_redirects=True).status_code
               
             elif (dir[0] != "/"):
-                dir = args.url + f'/{dir}'
-                get_response = httpx.get(dir, follow_redirects=True)
+                formatted_dir = args.url + f'/{dir}'
+                get_response = httpx.get(formatted_dir, follow_redirects=True)
                 get_status = get_response.status_code
                 get_header = get_response.headers.get("Content-Type")
-                post_status = httpx.post(dir, follow_redirects=True).status_code
+                post_status = httpx.post(formatted_dir, follow_redirects=True).status_code
                     
             else:
-                dir = args.url + dir
-                get_response = httpx.get(dir, follow_redirects=True)
+                formatted_dir = args.url + dir
+                get_response = httpx.get(formatted_dir, follow_redirects=True)
                 get_status = get_response.status_code 
                 get_header = get_response.headers.get("Content-Type")
-                post_status = httpx.post(dir, follow_redirects=True).status_code
+                post_status = httpx.post(formatted_dir, follow_redirects=True).status_code
 
 
             if (get_status == 404 and post_status == 404):
                 all_dirs.remove(dir)
-                print(dir + " " * 2  +f"{ str([get_status])}  [GET]", flush=True)
+                print(dir + " " * 2  + f"""\033[31m {str([get_status])}  [GET]\033[0m""", flush=True)
             
             elif (get_status != 404 and post_status != 404 and post_status != 405):
                 options_status = httpx.options(dir, follow_redirects=True).status_code
                 head_status = httpx.head(dir, follow_redirects=True).status_code
 
                 if (str(options_status)[0] == "2" and str(head_status)[0] == "2"):
-                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]} {[head_status]} {[options_status]} [GET] [POST] [HEAD] [OPTIONS] ", flush=True)
+                    print(dir + " " * 2 + f"""\033[94m{[get_status]} {[post_status]} {[head_status]} {[options_status]} [GET] [POST] [HEAD] [OPTIONS]\033[0m """, flush=True)
                 elif (str(options_status)[0] == "2"):
-                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]} {[options_status]} [GET] [POST] [OPTIONS] ", flush=True)
+                    print(dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[options_status]} [GET] [POST] [OPTIONS]\033[0m """, flush=True)
                 elif (str(head_status)[0] == "2"):
-                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]} {[head_status]} [GET] [POST] [HEAD] ", flush=True)
+                    print(dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[head_status]} [GET] [POST] [HEAD]\033[0m """, flush=True)
                 else:
-                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]}  [GET] [POST] ", flush=True)
+                    print(dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]}  [GET] [POST] \033[0m""", flush=True)
             elif (post_status != 405 and post_status != 404):
-                print(dir + " " * 2 + f"{ [post_status]}  [POST] ", flush=True)
+                print(dir + " " * 2 + f"""\033[94m{ [post_status]}  [POST]\033[0m """, flush=True)
             elif (get_status != 404):
-                print(dir + " " * 2 + f"{ [get_status]}  [GET] ", flush=True)
+                print(dir + " " * 2  + f"""\033[32m {str([get_status])}  [GET]\033[0m""", flush=True)
             else:
-                print(dir + " " * 2 + f"{ [get_status]}  [GET] ", flush=True)
+                print(dir + " " * 2  + f"""\033[31m {str([get_status])}  [GET]\033[0m""", flush=True)
+                # removes relative urls
+                if (dir[0] != "/" or dir[0] == "/"):
+                    print("has to remove: " + dir)
+                    all_dirs.remove(dir)
+        # removes absolute urls, controls bad addr exception                 
         except:
-           all_dirs.remove(dir)
+            all_dirs.remove(dir)
         
 def clean_urls(url):
     if(url[:4] == "http"):
