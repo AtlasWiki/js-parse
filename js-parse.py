@@ -272,7 +272,6 @@ def filter_urls_without_tqdm():
                 print(dir + " " * 2  + f"""\033[31m {str([get_status])}  [GET]\033[0m""", flush=True)
                 # removes relative urls
                 if (dir[0] != "/" or dir[0] == "/"):
-                    print("has to remove: " + dir)
                     all_dirs.remove(dir)
         # removes absolute urls, controls bad addr exception                 
         except:
