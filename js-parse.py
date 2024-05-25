@@ -259,25 +259,46 @@ def filter_urls_with_tqdm():
     for dir in tqdm(all_dirs[:], desc="Verifying", unit='URL', total=total_items, bar_format=custom_bar_format, position=0, dynamic_ncols=True, leave=True):
         try:
             if (dir[:4] == "http"):
-                get_status, post_status = httpx.get(dir, follow_redirects=True).status_code, httpx.post(dir, follow_redirects=True).status_code
+                dir = dir
+                get_response = httpx.get(dir, follow_redirects=True)
+                get_status = get_response.status_code 
+                get_header = get_response.headers.get("Content-Type")
+                post_status = httpx.post(args.url + dir, follow_redirects=True).status_code
               
             elif (dir[0] != "/"):
-                get_status, post_status = httpx.get(args.url + f'/{dir}', follow_redirects=True).status_code, httpx.post(args.url + f'/{dir}', follow_redirects=True).status_code
+                dir = args.url + f'/{dir}'
+                get_response = httpx.get(dir, follow_redirects=True)
+                get_status = get_response.status_code
+                get_header = get_response.headers.get("Content-Type")
+                post_status = httpx.post(args.url + f'/{dir}', follow_redirects=True).status_code
                     
             else:
-                get_status, post_status = httpx.get(args.url + dir, follow_redirects=True).status_code, httpx.post(args.url + dir, follow_redirects=True).status_code
-            
+                dir = args.url + dir
+                get_response = httpx.get(dir, follow_redirects=True)
+                get_status = get_response.status_code 
+                get_header = get_response.headers.get("Content-Type")
+                post_status = httpx.post(args.url + dir, follow_redirects=True).status_code
+
             if (get_status == 404 and post_status == 404):
                 all_dirs.remove(dir)
                 print(dir + " " * 2 + f"{ [get_status]}  [GET]", flush=True)
             elif (get_status != 404 and post_status != 404 and post_status != 405):
-                print(dir + " " * 2 + f"{ [get_status]} {[post_status]}  [GET] [POST]", flush=True)
+                options_status = httpx.options(dir, follow_redirects=True).status_code
+                head_status = httpx.head(dir, follow_redirects=True).status_code
+                if (str(options_status)[0] == "2" and str(head_status)[0] == "2"):
+                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]} {[head_status]} {[options_status]} [GET] [POST] [HEAD] [OPTIONS] ", " "*35 + str([get_header]) if "application/json" in get_header else "", flush=True)
+                elif (str(options_status)[0] == "2"):
+                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]} {[options_status]} [GET] [POST] [OPTIONS] ", " "*35 + str([get_header]) if "application/json" in get_header else "", flush=True)
+                elif (str(head_status)[0] == "2"):
+                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]} {[head_status]} [GET] [POST] [HEAD] ",  " "*35 + str([get_header]) if "application/json" in get_header else "", flush=True)
+                else:
+                    print(dir + " " * 2 + f"{ [get_status]} {[post_status]}  [GET] [POST] ", " "*35 + str([get_header]) if "application/json" in get_header else "", flush=True)
             elif (post_status != 405 and post_status != 404):
-                print(dir + " " * 2 + f"{ [post_status]}  [POST]", flush=True)
+                print(dir + " " * 2 + f"{ [post_status]}  [POST] ",  " "*35 + str([get_header]) if "application/json" in get_header else "", flush=True)
             elif (get_status != 404):
-                print(dir + " " * 2 + f"{ [get_status]}  [GET]", flush=True)
+                print(dir + " " * 2 + f"{ [get_status]}  [GET] ",  " "*35 + str([get_header]) if "application/json" in get_header else "", flush=True)
             else:
-                print(dir + " " * 2 + f"{ [get_status]}  [GET]", flush=True)
+                print(dir + " " * 2 + f"{ [get_status]}  [GET] ",  " "*35 + str([get_header]) if "application/json" in get_header else "", flush=True)
                 all_dirs.remove(dir)
                 
         except:
