@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 import jsbeautifier
 import argparse
+import httpx
 
 pretty_files = []
 get_py_filename = os.path.basename(__file__)
@@ -38,13 +39,19 @@ parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http o
 parser.add_argument("-s", "--save", help="save prettified js files", action="store_true")
 parser.add_argument("-b", "--blacklist", help="blacklist subdomains/domains", nargs="+", default="")
 parser.add_argument("-S", "--stdout", help="stdout friendly, displays urls only in stdout", action="store_true")
+parser.add_argument("-f", "--filter", help="removes false positives with httpx/requests (use at your own risk)", action="store_true")
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
 group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
 args = parser.parse_args()
 target_url = args.url
+
+if (target_url[len(target_url) - 1] == '/'):
+    target_url = args.url[:len(target_url)-1]
+
 intro_logo = f"""\u001b[31m
+
 
 ░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
 ░░░░░██║██╔════╝░░░░░░██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
@@ -147,9 +154,7 @@ def extract_urls(url):
     absolute_urls = re.findall(absolute_pattern, req)
     absolute_urls = [url[1] for url in absolute_urls] 
     all_dirs = relative_dirs + absolute_urls
-    unique_dirs = list(dict.fromkeys(all_dirs))
-    unique_dirs.sort()
-    return unique_dirs
+    return all_dirs
 
 def fetch_js(url):
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
@@ -173,22 +178,26 @@ def move_stored_files():
 
 def write_files():
     remove_dupes()
+    if (args.filter):
+        filter_urls_with_tqdm()
     with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
-        for unique_dir in all_dirs:
-            directories.write('')
+        directories.write('')
     with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
         for unique_dir in all_dirs:
-            directories.write(unique_dir + '\n')
+            directories.write(clean_urls(unique_dir) + '\n')
 
 def stdout_dirs():
     remove_dupes()
+    if (args.filter and args.stdout):
+        filter_urls_without_tqdm()
+    else:
+        filter_urls_with_tqdm()
     for dir in all_dirs:
-        print(dir)
+        print(clean_urls(dir))
+        
 
 def remove_dupes():
-    global all_dirs
-    all_dirs = list(dict.fromkeys(all_dirs))
-    return all_dirs
+    all_dirs[:] = list(dict.fromkeys(all_dirs))
 
 def process_files_with_tqdm():
     blacklist = args.blacklist
@@ -217,6 +226,68 @@ def process_files_without_tqdm():
                         store_urls(js_file)
                 else:
                     store_urls(target_url + js_file)
+
+def filter_urls_without_tqdm():
+    for dir in all_dirs[:]:
+        try:
+            if (dir[:4] == "http"):
+                get_status, post_status = httpx.get(dir, follow_redirects=True).status_code, httpx.post(dir, follow_redirects=True).status_code
+              
+            elif (dir[0] != "/"):
+                get_status, post_status = httpx.get(args.url + f'/{dir}', follow_redirects=True).status_code, httpx.post(args.url + f'/{dir}', follow_redirects=True).status_code
+                    
+            else:
+                get_status, post_status = httpx.get(args.url + dir, follow_redirects=True).status_code, httpx.post(args.url + dir, follow_redirects=True).status_code
+            
+            if (get_status == 404 and post_status == 404):
+                all_dirs.remove(dir)
+            elif (post_status != 405 and post_status != 404):
+                pass
+            elif (get_status != 404):
+                pass
+            else:
+                all_dirs.remove(dir)
+                
+        except:
+            all_dirs.remove(dir)
+
+def filter_urls_with_tqdm():
+    print('\nVerifying URLS, please wait')
+    custom_bar_format = "\033[32m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] "
+    total_items = len(all_dirs)
+    for dir in tqdm(all_dirs[:], desc="Verifying", unit='URL', total=total_items, bar_format=custom_bar_format, position=0, dynamic_ncols=True, leave=True):
+        try:
+            if (dir[:4] == "http"):
+                get_status, post_status = httpx.get(dir, follow_redirects=True).status_code, httpx.post(dir, follow_redirects=True).status_code
+              
+            elif (dir[0] != "/"):
+                get_status, post_status = httpx.get(args.url + f'/{dir}', follow_redirects=True).status_code, httpx.post(args.url + f'/{dir}', follow_redirects=True).status_code
+                    
+            else:
+                get_status, post_status = httpx.get(args.url + dir, follow_redirects=True).status_code, httpx.post(args.url + dir, follow_redirects=True).status_code
+            
+            if (get_status == 404 and post_status == 404):
+                all_dirs.remove(dir)
+                print(dir + " " * 2 + f"{ [get_status]}  [GET]", flush=True)
+            elif (post_status != 405 and post_status != 404):
+                print(dir + " " * 2 + f"{ [post_status]}  [POST]", flush=True)
+            elif (get_status != 404):
+                print(dir + " " * 2 + f"{ [get_status]}  [GET]", flush=True)
+            else:
+                print(dir + " " * 2 + f"{ [get_status]}  [GET]", flush=True)
+                all_dirs.remove(dir)
+                
+        except:
+            all_dirs.remove(dir)
+        
+def clean_urls(url):
+    if(url[:4] == "http"):
+        return url
+    elif (url[0] != "/"):
+        url = "/" + url
+        return url
+    else:
+        return url
 
 if __name__ == "__main__":
     if (args.stdout):
