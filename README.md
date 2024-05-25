@@ -59,29 +59,32 @@ js-parse https://youtube.com
 ```
 
 ## Some Example Usages:
+basic usage:
 ```
-basic usage: python js-parse.py https://youtube.com
+python js-parse.py https://youtube.com
 ```
 ![image](https://github.com/AtlasWiki/js-parse/assets/87085506/0310f684-347f-4402-8e11-13f33b49d22b)
 <br>
-
+verify/filter urls: 
 ```
-verify/filter urls: python js-parse.py https://youtube.com -f
+python js-parse.py https://youtube.com -f
 ```
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/c0c2d7f9-f667-4b48-8d20-421c9e0c0c75">
 
-![image](https://github.com/AtlasWiki/js-parse/assets/87085506/e6d58a65-eb2a-485c-bd52-d96aeed5ef48)
 
 <br>
 
+single-file: 
+
 ```
-single-file: python js-parse.py https://youtube.com -m
+python js-parse.py https://youtube.com -m
 ```
 ![image](https://github.com/AtlasWiki/js-parse/assets/87085506/e2103af4-85b3-4a70-ac7e-d29800c5149c)
 <br>
 
-
+std-out: 
 ```
-std-out: python js-parse.py https://youtube.com -S
+python js-parse.py https://youtube.com -S
 ```
 <img width="718" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/24408419-15b3-43e3-bcc6-755c622c0b0c">
 <br>
