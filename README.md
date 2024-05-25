@@ -12,7 +12,7 @@
 + **Downloading:** allows you to download js files that are in a beautified format.
 + **File Management:** allows an organized structure of storing the files and urls.
 + **File Association:** parses the name of the js files and writes the associated urls to them.
-+ **Upcoming feature:** verifies urls and removes false positives and filtering out third-party urls.
++ **URL Filter/Check** verifies legit urls and removes false positives.
 <br>
 
 ## Installation:
@@ -63,6 +63,14 @@ js-parse https://youtube.com
 basic usage: python js-parse.py https://youtube.com
 ```
 ![image](https://github.com/AtlasWiki/js-parse/assets/87085506/0310f684-347f-4402-8e11-13f33b49d22b)
+<br>
+
+```
+verify/filter urls: python js-parse.py https://youtube.com -f
+```
+
+![image](https://github.com/AtlasWiki/js-parse/assets/87085506/e6d58a65-eb2a-485c-bd52-d96aeed5ef48)
+
 <br>
 
 ```
