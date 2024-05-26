@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(prog= f"python {get_py_filename}", description=
 f'''
 \u001b[91mbasic usage:\u001b[0m python {get_py_filename } https://youtube.com
 \u001b[91msingle file:\u001b[0m python {get_py_filename } https://youtube.com -m
-\u001b[91mmulti-file:\u001b[0m python {get_py_filename } https://youtube.com -i
+\u001b[91mfilter/verify urls:\u001b[0m python {get_py_filename } https://youtube.com -f
 \u001b[91mstdout:\u001b[0m python {get_py_filename } https://youtube.com -S   
 ''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
 
