@@ -200,7 +200,7 @@ def stdout_dirs():
     remove_dupes()
     if (args.filter and args.stdout):
         filter_urls_without_tqdm()
-    else:
+    elif(args.filter):
         filter_urls_with_tqdm()
     for dir in all_dirs:
         print(clean_urls(dir))
@@ -223,7 +223,10 @@ def process_files_with_tqdm():
                         store_urls(js_file)
                 else:
                     print(js_file, flush=True)
-                    store_urls(target_url + js_file)
+                    if (js_file[0] != "/"): 
+                        js_file = "/" + "js_file"
+                    else:
+                        store_urls(target_url + js_file)
 
 def process_files_without_tqdm():
     blacklist = args.blacklist
@@ -235,7 +238,10 @@ def process_files_without_tqdm():
                     if target_url in js_file:
                         store_urls(js_file)
                 else:
-                    store_urls(target_url + js_file)
+                    if (js_file[0] != "/"): 
+                        js_file = "/" + "js_file"
+                    else:
+                        store_urls(target_url + js_file)
 
 def filter_urls_without_tqdm():
     for dir in all_dirs[:]:
