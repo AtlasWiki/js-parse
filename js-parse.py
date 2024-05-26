@@ -188,7 +188,7 @@ def write_files():
     remove_dupes()
     if (args.filter and args.stdout):
         filter_urls_without_tqdm()
-    else:
+    elif (args.filter):
         filter_urls_with_tqdm()
     with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
         directories.write('')
@@ -224,7 +224,8 @@ def process_files_with_tqdm():
                 else:
                     print(js_file, flush=True)
                     if (js_file[0] != "/"): 
-                        js_file = "/" + "js_file"
+                        js_file = "/" + js_file
+                        store_urls(target_url + js_file)
                     else:
                         store_urls(target_url + js_file)
 
@@ -239,7 +240,8 @@ def process_files_without_tqdm():
                         store_urls(js_file)
                 else:
                     if (js_file[0] != "/"): 
-                        js_file = "/" + "js_file"
+                        js_file = "/" + js_file
+                        store_urls(target_url + js_file)
                     else:
                         store_urls(target_url + js_file)
 
@@ -279,7 +281,8 @@ def filter_urls_without_tqdm():
                 # removes relative urls
                 if (dir[0] != "/" or dir[0] == "/"):
                     all_dirs.remove(dir)
-        # removes absolute urls, controls bad addr exception                 
+        # removes absolute urls, controls bad addr exception           
+              
         except:
             all_dirs.remove(dir)
         
@@ -335,7 +338,6 @@ def filter_urls_with_tqdm():
                 print(dir + " " * 2  + f"""\033[31m {str([get_status])}  [GET]\033[0m""", flush=True)
                 # removes relative urls
                 if (dir[0] != "/" or dir[0] == "/"):
-                    print("has to remove: " + dir)
                     all_dirs.remove(dir)
         # removes absolute urls, controls bad addr exception                 
         except:
