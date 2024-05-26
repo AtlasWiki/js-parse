@@ -54,6 +54,7 @@ js-parse https://youtube.com
 -b BLACKLIST [BLACKLIST ...], --blacklist BLACKLIST [BLACKLIST ...]
                       blacklist subdomains/domains (default: )
 -S, --stdout          stdout friendly, displays urls only in stdout (default: False)
+-f, --filter          removes false positives with httpx/requests (use at your own risk) (default: False)
 -m, --merge           create file and merge all urls into it (default: False)
 -i, --isolate         create multiple files and store urls where they were parsed from (default: False)
 ```
