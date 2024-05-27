@@ -390,7 +390,6 @@ def parse_domain(http_url):
     registered_domain = domain_labels[-2] + "." + domain_labels[-1] 
     return registered_domain
 
-
 if __name__ == "__main__":
     if (args.stdout):
         pass
