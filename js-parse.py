@@ -318,54 +318,56 @@ def filter_urls_with_tqdm():
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
     with httpx.Client(follow_redirects=True, headers=headers) as client:
         for dir in tqdm(all_dirs[:], desc=" Probing", unit='URL', total=total_items, bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False):
-            try:
-                if dir[:4] == "http":
-                    formatted_dir = dir
-                    if (args.remove_third_parties):
-                        curr_domain = parse_domain(formatted_dir)
-                        target_domain = parse_domain(args.url) 
-                        if (curr_domain != target_domain):
-                            formatted_dir = ""
-                elif dir[0] != "/":
-                    formatted_dir = args.url + f'/{dir}'
-                else:
-                    formatted_dir = args.url + dir
-
-                    
-                get_response = client.get(formatted_dir)
-                get_status = get_response.status_code
-                # get_header = get_response.headers.get("Content-Type")
-                post_status = client.post(formatted_dir).status_code
-
-                if get_status == 404 and post_status == 404:
-                    to_remove.append(dir)
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
-                
-                elif get_status != 404 and post_status != 404 and post_status != 405:
-                    options_status = client.options(formatted_dir).status_code
-                    head_status = client.head(formatted_dir).status_code
-
-                    if str(options_status)[0] == "2" and str(head_status)[0] == "2":
-                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{[get_status]} {[post_status]} {[head_status]} {[options_status]} [GET] [POST] [HEAD] [OPTIONS]\033[0m""")
-                    elif str(options_status)[0] == "2":
-                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[options_status]} [GET] [POST] [OPTIONS]\033[0m""")
-                    elif str(head_status)[0] == "2":
-                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[head_status]} [GET] [POST] [HEAD]\033[0m""")
-                    else:
-                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]}  [GET] [POST]\033[0m""")
-                elif post_status != 405 and post_status != 404:
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [post_status]}  [POST]\033[0m""")
-                elif get_status != 404:
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[32m {str([get_status])}  [GET]\033[0m""")
-                else:
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
-                    if dir[0] != "/" or dir[0] == "/":
-                        to_remove.append(dir)
-            except httpx.UnsupportedProtocol:
+            if (dir == "https://api.wepwn.ma/contact"):
                 pass
-            except Exception as e:
-                tqdm.write(f"Error processing {dir}: {e}")
-                to_remove.append(dir)
+            else:
+                try:
+                    if dir[:4] == "http":
+                        formatted_dir = dir
+                        if (args.remove_third_parties):
+                            curr_domain = parse_domain(formatted_dir)
+                            target_domain = parse_domain(args.url) 
+                            if (curr_domain != target_domain):
+                                formatted_dir = ""
+                    elif dir[0] != "/":
+                        formatted_dir = args.url + f'/{dir}'
+                    else:
+                        formatted_dir = args.url + dir
+
+                        
+                    get_response = client.get(formatted_dir)
+                    get_status = get_response.status_code
+                    get_file_type = get_response.headers.get("Content-Type").split(";")[0]
+                    post_status = client.post(formatted_dir).status_code
+
+                    if get_status == 404 and post_status == 404:
+                        to_remove.append(dir)
+                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
+                    
+                    elif get_status != 404 and post_status != 404 and post_status != 405:
+                        options_status = client.options(formatted_dir).status_code
+                        head_status = client.head(formatted_dir).status_code
+
+                        if str(options_status)[0] == "2" and str(head_status)[0] == "2":
+                            tqdm.write(f"\033[33m[Verified]\033[0m\033[94m{[get_status]}{[post_status]}{[head_status]}{[options_status]}[GET][POST][HEAD][OPTIONS]\033[0m\033[95;1m{[get_file_type]}\033[0m "+ dir)
+                        elif str(options_status)[0] == "2":
+                            tqdm.write(f"\033[33m[Verified]\033[0m\033[94m{[get_status]}{[post_status]}{[options_status]}[GET][POST][OPTIONS]\033[0m\033[95;1m{[get_file_type]}\033[0m "+ dir)
+                        elif str(head_status)[0] == "2":
+                            tqdm.write(f"\033[33m[Verified]\033[0m\033[94m{[get_status]}{[post_status]}{[head_status]}[GET][POST][HEAD]\033[0m\033[95;1m{[get_file_type]}\033[0m "+ dir)
+                        else:
+                            tqdm.write(f"\033[33m[Verified]\033[0m\033[94m{[get_status]}{[post_status]}[GET][POST]\033[0m\033[95;1m{[get_file_type]}\033[0m "+ dir)
+                    elif post_status != 405 and post_status != 404:
+                        tqdm.write(f"\033[33m[Verified]\033[0m\033[94m{[post_status]}[POST]\033[0m\033[95;1m{[get_file_type]}\033[0m "+ dir)
+                    elif get_status != 404:
+                        tqdm.write(f"\033[33m[Verified]\033[0m\033[32m{[get_status]}[GET]\033[0m\033[95;1m{[get_file_type]}\033[0m "+ dir)
+                    else:
+                        tqdm.write(f"\033[33m[Verified]\033[0m\033[31m{[get_status]}[GET]\033[0m\033[95;1m{[get_file_type]}\033[0m "+ dir)
+                        if dir[0] != "/" or dir[0] == "/":
+                            to_remove.append(dir)
+                except Exception:
+                    # tqdm.write(f"Error processing {dir}: {e}")
+                    to_remove.append(dir)
+
     end_time = time.time()
     elapsed_time = end_time - start_time
 
