@@ -65,16 +65,20 @@ basic usage:
 ```
 python js-parse.py https://youtube.com
 ```
-<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/f5f3bb2d-31f5-4b53-97b0-528b1360a669">
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/698d7937-f660-46ae-8ae5-ad33e5057105">
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/424ba007-0328-4d96-ba9d-ddc83cb0d86f">
+
 
 
 <br>
 
-verify/filter urls: 
+block third party url probing and probe target's urls: 
 ```
-python js-parse.py https://youtube.com -f
+python js-parse.py https://youtube.com -f -r
 ```
-![image](https://github.com/AtlasWiki/js-parse/assets/87085506/36d30a9c-5d32-4741-9de9-710858e2432c)
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/3bf61885-4eb3-40b0-b11a-1a8d03742bc2">
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/0aca8a51-8969-48c4-9071-f24f0db0d85f">
+
 
 
 
@@ -85,7 +89,8 @@ single-file:
 ```
 python js-parse.py https://youtube.com -m
 ```
-<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/6b620869-cc5d-481a-b461-098c2d8a5a26">
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/1d678b06-ab0f-4dfa-9810-a8f541a941b4">
+
 
 <br>
 
