@@ -267,44 +267,37 @@ def process_files_without_tqdm():
 
 def filter_urls_without_tqdm():
     to_remove = []
-    for dir in all_dirs[:]:
-        try:
-            if dir[:4] == "http":
-                formatted_dir = dir
-            elif dir[0] != "/":
-                formatted_dir = args.url + f'/{dir}'
-            else:
-                formatted_dir = args.url + dir
+    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
+    with httpx.Client(follow_redirects=True, headers=headers) as client:
+        for dir in all_dirs[:]:
+            try:
+                if dir[:4] == "http":
+                    formatted_dir = dir
+                    if (args.remove_third_parties):
+                        curr_domain = parse_domain(formatted_dir)
+                        target_domain = parse_domain(args.url) 
+                        if (curr_domain != target_domain):
+                            formatted_dir = ""
+                elif dir[0] != "/":
+                    formatted_dir = args.url + f'/{dir}'
+                else:
+                    formatted_dir = args.url + dir
 
-            get_response = httpx.get(formatted_dir, follow_redirects=True)
-            get_status = get_response.status_code
-            get_header = get_response.headers.get("Content-Type")
-            post_status = httpx.post(formatted_dir, follow_redirects=True).status_code
-
-            if get_status == 404 and post_status == 404:
-                to_remove.append(dir)
-            
-            elif get_status != 404 and post_status != 404 and post_status != 405:
-                options_status = httpx.options(formatted_dir, follow_redirects=True).status_code
-                head_status = httpx.head(formatted_dir, follow_redirects=True).status_code
-
-                if str(options_status)[0] == "2" and str(head_status)[0] == "2":
-                   pass
-                elif str(options_status)[0] == "2":
-                    pass
-                elif str(head_status)[0] == "2":
-                    pass
+                get_response, post_response = client.get(formatted_dir), client.post(formatted_dir)
+                get_status, post_status = str(get_response.status_code), str(post_response.status_code)
+                get_status_verified, post_status_verified = allowed_status_codes.get(f'{get_status}', False), allowed_status_codes.get(f'{post_status}', False)
+                
+                # removes local/relative urls (dir not formatted dir)
+                if not (get_status_verified or post_status_verified):
+                   if dir[0] != "/" or dir[0] == "/":
+                        to_remove.append(dir)
                 else:
                     pass
-            elif post_status != 405 and post_status != 404:
-                pass
-            elif get_status != 404:
-                pass
-            else:
-                if dir[0] != "/" or dir[0] == "/":
-                    to_remove.append(dir)
-        except Exception:
-            to_remove.append(dir)
+                # removes absolute/http urls
+            except Exception:
+                #tqdm.write(f"Error processing {dir}: {e}")
+                to_remove.append(dir)
+
 
     for dir in to_remove:
         all_dirs.remove(dir)
@@ -331,7 +324,6 @@ def filter_urls_with_tqdm():
                 else:
                     formatted_dir = args.url + dir
 
-                    
                 get_response, post_response = client.get(formatted_dir), client.post(formatted_dir)
                 get_status, post_status = str(get_response.status_code), str(post_response.status_code)
                 get_file_type = get_response.headers.get("Content-Type").split(";")[0]
@@ -374,7 +366,7 @@ def filter_urls_with_tqdm():
                     # removes local/relative urls
                     if dir[0] != "/" or dir[0] == "/":
                         to_remove.append(dir)
-            # removes absolute urls
+            # removes absolute/http urls
             except Exception:
                 #tqdm.write(f"Error processing {dir}: {e}")
                 to_remove.append(dir)
