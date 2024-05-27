@@ -13,6 +13,7 @@
 + **File Management:** allows an organized structure of storing the files and urls.
 + **File Association:** parses the name of the js files and writes the associated urls to them.
 + **URL Filter/Check:** verifies legit urls and removes false positives.
++ **Disable Third Party URL Probing:** disables http requests send to third party urls.
 <br>
 
 ## Installation:
@@ -50,11 +51,11 @@ js-parse https://youtube.com
 ## Options:
 ```
 -h, --help            show this help message and exit
--s, --save            save prettified js files (default: False)
--b BLACKLIST [BLACKLIST ...], --blacklist BLACKLIST [BLACKLIST ...]
-                      blacklist subdomains/domains (default: )
--S, --stdout          stdout friendly, displays urls only in stdout (default: False)
--f, --filter          removes false positives with httpx/requests (use at your own risk) (default: False)
+--save                save prettified js files (default: False)
+-s, --stdout          stdout friendly, displays urls only in stdout compatibility. also known as silent mode (default: False)
+-f, --filter          removes false positives with http probing/request methods (use at your own risk) (default: False)
+-r, --remove-third-parties
+                      does not probe third-party urls with request methods (default: False)
 -m, --merge           create file and merge all urls into it (default: False)
 -i, --isolate         create multiple files and store urls where they were parsed from (default: False)
 ```
