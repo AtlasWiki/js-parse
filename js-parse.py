@@ -231,7 +231,7 @@ def process_files_with_tqdm():
     for js_file in tqdm(extract_files(target_url), desc="Extracting", unit='URL', bar_format=custom_bar_format, total=total_items, position=4, dynamic_ncols=True, leave=False):
         # handles absolute urls that belong to target's domain
         if 'http' in js_file or 'https' in js_file:
-            if target_url in js_file:
+            if (parse_domain(target_url) == parse_domain(js_file)):
                 tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
                 store_urls(js_file)
             else:
