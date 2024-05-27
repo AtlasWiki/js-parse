@@ -112,7 +112,7 @@ def fetch_html(url):
         list_tags = soup.find_all('script')
         return list_tags
     except ( requests.exceptions.MissingSchema, requests.exceptions.InvalidSchema, requests.exceptions.InvalidURL):
-            print(f'NOT FOUND: invalid url, missing, or does not start with http/https protocol in {url}')
+            print(f'NOT FOUND: invalid url, missing, or does not start with http:// or https:// in {url}')
             quit()
    
 def store_urls(url):
@@ -184,8 +184,16 @@ def move_stored_files():
 
 def write_files():
     remove_dupes()
-    if (args.filter and args.stdout):
-        filter_urls_without_tqdm()
+    if (args.remove_third_parties):
+        if (args.filter and args.stdout):
+            filter_urls_without_tqdm()
+        elif (args.filter):
+            filter_urls_with_tqdm()
+        else:
+            print("must have -f (filter) option with -r (remove third parties)")
+            quit()
+    elif (args.filter and args.stdout):
+            filter_urls_without_tqdm()
     elif (args.filter):
         filter_urls_with_tqdm()
     with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
@@ -196,13 +204,20 @@ def write_files():
 
 def stdout_dirs():
     remove_dupes()
-    if (args.filter and args.stdout):
-        filter_urls_without_tqdm()
-    elif(args.filter):
+    if (args.remove_third_parties):
+        if (args.filter and args.stdout):
+            filter_urls_without_tqdm()
+        elif (args.filter):
+            filter_urls_with_tqdm()
+        else:
+            print("must have -f (filter) option with -r (remove third parties)")
+            quit()
+    elif (args.filter and args.stdout):
+            filter_urls_without_tqdm()
+    elif (args.filter):
         filter_urls_with_tqdm()
     for dir in all_dirs:
-        # print(clean_urls(dir))
-        clean_urls(dir)
+        print(clean_urls(dir))
         
 
 def remove_dupes():
@@ -309,14 +324,20 @@ def filter_urls_with_tqdm():
                 try:
                     if dir[:4] == "http":
                         formatted_dir = dir
+                        if (args.remove_third_parties):
+                           curr_domain = grab_registered_domain(formatted_dir)
+                           target_domain = grab_registered_domain(args.url) 
+                           if (curr_domain != target_domain):
+                               formatted_dir = ""
                     elif dir[0] != "/":
                         formatted_dir = args.url + f'/{dir}'
                     else:
                         formatted_dir = args.url + dir
 
+                     
                     get_response = client.get(formatted_dir)
                     get_status = get_response.status_code
-                    get_header = get_response.headers.get("Content-Type")
+                    # get_header = get_response.headers.get("Content-Type")
                     post_status = client.post(formatted_dir).status_code
 
                     if get_status == 404 and post_status == 404:
@@ -343,6 +364,8 @@ def filter_urls_with_tqdm():
                         tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
                         if dir[0] != "/" or dir[0] == "/":
                             to_remove.append(dir)
+                except httpx.UnsupportedProtocol:
+                    pass
                 except Exception as e:
                     tqdm.write(f"Error processing {dir}: {e}")
                     to_remove.append(dir)
@@ -371,7 +394,12 @@ def clean_urls(url):
     else:
         return url
   
-   
+def grab_registered_domain(http_url):
+    url_pieces = http_url.split("/", 3)
+    domain_labels = url_pieces[2].split(".")
+    registered_domain = domain_labels[-2] + "." + domain_labels[-1] 
+    return registered_domain
+
 
 if __name__ == "__main__":
     if (args.stdout):
