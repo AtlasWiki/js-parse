@@ -22,7 +22,6 @@ allowed_status_codes = {
     '306': 'Switch Proxy',
     '307': 'Temporary Redirect',
     '308': 'Permanent Redirect',
-    '400': 'Bad Request',
     '401': 'Unauthorized',
     '402': 'Payment Required',
     '403': 'Forbidden',
@@ -64,7 +63,8 @@ allowed_status_codes = {
 
 blocked_status_codes = {
     '404': '\033[31m', # red
-    '405': '\033[31m' # red
+    '405': '\033[31m', # red
+    '400': '\033[31m'  
 }
 
 colored_status_codes = {
