@@ -332,32 +332,45 @@ def filter_urls_with_tqdm():
                     formatted_dir = args.url + dir
 
                     
-                get_response = client.get(formatted_dir)
-                get_status = str(get_response.status_code)
+                get_response, post_response = client.get(formatted_dir), client.post(formatted_dir)
+                get_status, post_status = str(get_response.status_code), str(post_response.status_code)
                 get_file_type = get_response.headers.get("Content-Type").split(";")[0]
-                get_status_color = str(colored_status_codes.get(get_status[0]))
-                get_status_colored_message =  get_status_color + get_status
-                get_status_verified = allowed_status_codes.get(f'{get_status}', False)
+                get_status_color, post_status_color= str(colored_status_codes.get(get_status[0])), str(colored_status_codes.get(post_status[0]))
+                get_status_colored_message, post_status_colored_message =  get_status_color + get_status, post_status_color + post_status
+                get_status_verified, post_status_verified = allowed_status_codes.get(f'{get_status}', False), allowed_status_codes.get(f'{post_status}', False)
                 get_status_blocked = blocked_status_codes.get(f'{get_status}', False)
 
                 reset_color = '\033[0m'
-                
-
-                post_response = client.post(formatted_dir)
-                post_status = str(post_response.status_code)
-                post_status_color = str(colored_status_codes.get(post_status[0]))
-                post_status_colored_message = post_status_color + post_status
-                post_status_verified = allowed_status_codes.get(f'{post_status}', False)
-                post_status_blocked = blocked_status_codes.get(f'{post_status}', False)
+                verified_message_strip = f"\033[33m[Verified]{reset_color} "
+                get_status_full_message = verified_message_strip + f"{get_status_color}[{get_status_colored_message}][GET]{reset_color} "
+                post_status_full_message = verified_message_strip + f"{post_status_color}[{post_status_colored_message}]POST]{reset_color} "
+                get_and_post_full_message = get_status_full_message + post_status_full_message.replace(verified_message_strip, "")
+                get_and_post_full_error_message = verified_message_strip + f"{get_status_blocked}[{get_status}][GET/POST]{reset_color} "
 
                 if (get_status_verified and post_status_verified):
-                    tqdm.write(f"\033[33m[Verified]{reset_color}{get_status_color}[{get_status_colored_message}][GET]{reset_color}{post_status_color}[{post_status_colored_message}][POST]{reset_color} "+ dir)
+                    head_status, options_status = str(client.head(formatted_dir).status_code), str(client.options(formatted_dir).status_code)
+                    head_status_color, options_status_color = str(colored_status_codes.get(head_status[0])), str(colored_status_codes.get(options_status[0]))
+                    head_status_colored_message, options_status_colored_message = head_status_color + head_status, options_status_color + options_status
+                    head_status_verified, options_status_verified = allowed_status_codes.get(f'{head_status}', False), allowed_status_codes.get(f'{options_status}', False)
+                    head_status_full_message_others = get_and_post_full_message + f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} "
+                    options_status_full_message_others = get_and_post_full_message + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
+                    options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
+
+                    if (head_status_verified and options_status_verified):
+                        tqdm.write(options_head_status_full_message_others + dir)
+                    elif (head_status_verified):
+                        tqdm.write(head_status_full_message_others + dir)
+                    elif (options_status_verified):
+                        tqdm.write(options_status_full_message_others + dir)
+                    else:
+                        tqdm.write(get_and_post_full_message + dir)
+                  
                 elif(get_status_verified):
-                    tqdm.write(f"\033[33m[Verified]{reset_color}{get_status_color}[{get_status_colored_message}][GET]{reset_color} "+ dir) #perfect
+                    tqdm.write(get_status_full_message + dir)
                 elif(post_status_verified):
-                        tqdm.write(f"\033[33m[Verified]{reset_color}{post_status_color}[{post_status_colored_message}]POST]{reset_color} "+ dir)
+                    tqdm.write(post_status_full_message + dir)
                 else:
-                    tqdm.write(f"\033[33m[Verified]{reset_color}{get_status_blocked}[{get_status}]GET/POST]{reset_color} "+ dir)
+                    tqdm.write(get_and_post_full_error_message + dir)
                     # removes local/relative urls
                     if dir[0] != "/" or dir[0] == "/":
                         to_remove.append(dir)
