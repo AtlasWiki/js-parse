@@ -302,7 +302,7 @@ def filter_urls_without_tqdm():
             else:
                 if dir[0] != "/" or dir[0] == "/":
                     to_remove.append(dir)
-        except Exception as e:
+        except Exception:
             to_remove.append(dir)
 
     for dir in to_remove:
@@ -322,8 +322,8 @@ def filter_urls_with_tqdm():
                 if dir[:4] == "http":
                     formatted_dir = dir
                     if (args.remove_third_parties):
-                        curr_domain = grab_registered_domain(formatted_dir)
-                        target_domain = grab_registered_domain(args.url) 
+                        curr_domain = parse_domain(formatted_dir)
+                        target_domain = parse_domain(args.url) 
                         if (curr_domain != target_domain):
                             formatted_dir = ""
                 elif dir[0] != "/":
@@ -375,23 +375,16 @@ def filter_urls_with_tqdm():
         all_dirs.remove(dir)
         
 def clean_urls(url):
-    # try:
     if(url[:4] == "http"):
-            # url_pieces = url.split(".")
-            # custom_domain = url_pieces[1]
-            # end_half_of_url = url_pieces[2]
-            # custom_domain_with_end_half = custom_domain + "." + end_half_of_url
-            # domain = custom_domain_with_end_half.split('/')[0]
-            # return domain
+            
             return url
-    # except:
     if (url[0] != "/"):
         url = "/" + url
         return url
     else:
         return url
   
-def grab_registered_domain(http_url):
+def parse_domain(http_url):
     url_pieces = http_url.split("/", 3)
     domain_labels = url_pieces[2].split(".")
     registered_domain = domain_labels[-2] + "." + domain_labels[-1] 
