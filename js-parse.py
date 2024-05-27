@@ -5,6 +5,7 @@ from tqdm import tqdm
 import jsbeautifier
 import argparse
 import httpx
+import time
 
 pretty_files = []
 get_py_filename = os.path.basename(__file__)
@@ -36,15 +37,16 @@ f'''
 ''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
 
 parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
-parser.add_argument("-s", "--save", help="save prettified js files", action="store_true")
-parser.add_argument("-b", "--blacklist", help="blacklist subdomains/domains", nargs="+", default="")
-parser.add_argument("-S", "--stdout", help="stdout friendly, displays urls only in stdout", action="store_true")
-parser.add_argument("-f", "--filter", help="removes false positives with httpx/requests (use at your own risk)", action="store_true")
+parser.add_argument("--save", help="save prettified js files", action="store_true")
+parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
+parser.add_argument("-f", "--filter", help="removes false positives with http probing/request methods (use at your own risk)", action="store_true")
+parser.add_argument("-r", "--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
 # parser.add_argument("-k", "--kontrol", help="removes false positives with httpx/requests (use at your own risk)", choices=['ALL', 'API', 'FORBIDDEN'])
 
-group = parser.add_mutually_exclusive_group()
-group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
-group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
+file_group = parser.add_mutually_exclusive_group()
+file_group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
+file_group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
+
 args = parser.parse_args()
 target_url = args.url
 
@@ -76,17 +78,17 @@ def verify_files():
         elif (args.merge):
             process_files_with_tqdm()
             write_files()
-            print(f'parsed: {len(all_dirs)} urls')
+            print(f'\n\n\n\033[31m[PARSED]\033[0m {len(all_dirs)} urls\n')
         else:
             process_files_with_tqdm()
-            print(f'parsed: {len(all_dirs)} urls')
+            print(f'\n\n\n\033[31m[PARSED]\033[0m {len(all_dirs)} urls\n')
     elif(args.stdout):
         process_files_without_tqdm()
         stdout_dirs()
     else:
         process_files_with_tqdm()
         stdout_dirs()
-        print(f'\n\n\n***parsed: {len(all_dirs)} urls***')
+        print(f'\n\n\n\033[31m[PARSED]\033[0m {len(all_dirs)} urls\n')
     if(args.save):
         move_stored_files()
         print('saved js files')
@@ -108,15 +110,11 @@ def fetch_html(url):
         req = requests.get(url, headers=headers)
         soup = BeautifulSoup(req.content, "html.parser")
         list_tags = soup.find_all('script')
+        return list_tags
     except ( requests.exceptions.MissingSchema, requests.exceptions.InvalidSchema, requests.exceptions.InvalidURL):
             print(f'NOT FOUND: invalid url, missing, or does not start with http/https protocol in {url}')
             quit()
-
-    req = requests.get(url, headers=headers)
-    soup = BeautifulSoup(req.content, "html.parser")
-    list_tags = soup.find_all('script')
-    return list_tags
-
+   
 def store_urls(url):
     try:
         global target
@@ -203,47 +201,53 @@ def stdout_dirs():
     elif(args.filter):
         filter_urls_with_tqdm()
     for dir in all_dirs:
-        print(clean_urls(dir))
+        # print(clean_urls(dir))
+        clean_urls(dir)
         
 
 def remove_dupes():
     all_dirs[:] = list(dict.fromkeys(all_dirs))
 
 def process_files_with_tqdm():
-    blacklist = args.blacklist
-    custom_bar_format = "\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}]"
+    custom_bar_format = "[[\033[94m  {desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}]  ]]"
     total_items = len(list(extract_files(target_url)))
-    for js_file in tqdm(extract_files(target_url), desc=" Extracting", unit='URL', bar_format=custom_bar_format, total=total_items, position=0, dynamic_ncols=True, leave=True):
-        if any(domain in js_file for domain in blacklist):
-            pass
+    start_time = time.time()
+    for js_file in tqdm(extract_files(target_url), desc="Extracting", unit='URL', bar_format=custom_bar_format, total=total_items, position=4, dynamic_ncols=True, leave=False):
+        # handles absolute urls that belong to target's domain
+        if 'http' in js_file or 'https' in js_file:
+            if target_url in js_file:
+                tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+                store_urls(js_file)
+            else:
+                tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
         else:
-                if 'http' in js_file or 'https' in js_file:
-                    if target_url in js_file:
-                        tqdm.write("\033[32m[Extracted]\033[0m: " + js_file)
-                        store_urls(js_file)
-                else:
-                    tqdm.write("\033[32m[Extracted]\033[0m: " + js_file)
-                    if (js_file[0] != "/"): 
-                        js_file = "/" + js_file
-                        store_urls(target_url + js_file)
-                    else:
-                        store_urls(target_url + js_file)
-        
+            # handles both relative files and relative urls
+            if (js_file[0] != "/"): 
+                js_file = "/" + js_file
+                tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+                store_urls(target_url + js_file)
+            else:
+                tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+                store_urls(target_url + js_file)
+    print("")
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print("  \033[94m" + f"[COMPLETED]\033[0m {total_items} files in {elapsed_time:.2f} seconds")
+ 
+
 def process_files_without_tqdm():
-    blacklist = args.blacklist
     for js_file in extract_files(target_url):
-        if any(domain in js_file for domain in blacklist):
-            pass
+        # handles absolute urls that belong to target's domain
+        if 'http' in js_file or 'https' in js_file:
+            if target_url in js_file:
+                store_urls(js_file)
         else:
-                if 'http' in js_file or 'https' in js_file:
-                    if target_url in js_file:
-                        store_urls(js_file)
-                else:
-                    if (js_file[0] != "/"): 
-                        js_file = "/" + js_file
-                        store_urls(target_url + js_file)
-                    else:
-                        store_urls(target_url + js_file)
+            # handles both relative files and relative urls
+            if (js_file[0] != "/"): 
+                js_file = "/" + js_file
+                store_urls(target_url + js_file)
+            else:
+                store_urls(target_url + js_file)
 
 def filter_urls_without_tqdm():
     to_remove = []
@@ -292,63 +296,82 @@ def filter_urls_without_tqdm():
         
 def filter_urls_with_tqdm():
     print('\nVerifying URLs, please wait')
-    custom_bar_format = "\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] "
+    start_time = time.time()
+    custom_bar_format = "[[\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] ]]"
     total_items = len(all_dirs)
     to_remove = []
-
-    for dir in tqdm(all_dirs[:], desc=" Verifying", unit='URL', total=total_items, bar_format=custom_bar_format, position=0, dynamic_ncols=True, leave=True):
-        try:
-            if dir[:4] == "http":
-                formatted_dir = dir
-            elif dir[0] != "/":
-                formatted_dir = args.url + f'/{dir}'
+    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
+    with httpx.Client(follow_redirects=True, headers=headers) as client:
+        for dir in tqdm(all_dirs[:], desc=" Probing", unit='URL', total=total_items, bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False):
+            if (dir == "https://api.wepwn.ma/contact"):
+                pass
             else:
-                formatted_dir = args.url + dir
+                try:
+                    if dir[:4] == "http":
+                        formatted_dir = dir
+                    elif dir[0] != "/":
+                        formatted_dir = args.url + f'/{dir}'
+                    else:
+                        formatted_dir = args.url + dir
 
-            get_response = httpx.get(formatted_dir, follow_redirects=True)
-            get_status = get_response.status_code
-            get_header = get_response.headers.get("Content-Type")
-            post_status = httpx.post(formatted_dir, follow_redirects=True).status_code
+                    get_response = client.get(formatted_dir)
+                    get_status = get_response.status_code
+                    get_header = get_response.headers.get("Content-Type")
+                    post_status = client.post(formatted_dir).status_code
 
-            if get_status == 404 and post_status == 404:
-                to_remove.append(dir)
-                tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
-            
-            elif get_status != 404 and post_status != 404 and post_status != 405:
-                options_status = httpx.options(formatted_dir, follow_redirects=True).status_code
-                head_status = httpx.head(formatted_dir, follow_redirects=True).status_code
+                    if get_status == 404 and post_status == 404:
+                        to_remove.append(dir)
+                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
+                    
+                    elif get_status != 404 and post_status != 404 and post_status != 405:
+                        options_status = client.options(formatted_dir).status_code
+                        head_status = client.head(formatted_dir).status_code
 
-                if str(options_status)[0] == "2" and str(head_status)[0] == "2":
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{[get_status]} {[post_status]} {[head_status]} {[options_status]} [GET] [POST] [HEAD] [OPTIONS]\033[0m""")
-                elif str(options_status)[0] == "2":
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[options_status]} [GET] [POST] [OPTIONS]\033[0m""")
-                elif str(head_status)[0] == "2":
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[head_status]} [GET] [POST] [HEAD]\033[0m""")
-                else:
-                    tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]}  [GET] [POST]\033[0m""")
-            elif post_status != 405 and post_status != 404:
-                tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [post_status]}  [POST]\033[0m""")
-            elif get_status != 404:
-                tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[32m {str([get_status])}  [GET]\033[0m""")
-            else:
-                tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
-                if dir[0] != "/" or dir[0] == "/":
+                        if str(options_status)[0] == "2" and str(head_status)[0] == "2":
+                            tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{[get_status]} {[post_status]} {[head_status]} {[options_status]} [GET] [POST] [HEAD] [OPTIONS]\033[0m""")
+                        elif str(options_status)[0] == "2":
+                            tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[options_status]} [GET] [POST] [OPTIONS]\033[0m""")
+                        elif str(head_status)[0] == "2":
+                            tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]} {[head_status]} [GET] [POST] [HEAD]\033[0m""")
+                        else:
+                            tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [get_status]} {[post_status]}  [GET] [POST]\033[0m""")
+                    elif post_status != 405 and post_status != 404:
+                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[94m{ [post_status]}  [POST]\033[0m""")
+                    elif get_status != 404:
+                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[32m {str([get_status])}  [GET]\033[0m""")
+                    else:
+                        tqdm.write("\033[33m[Verified]\033[0m "+ dir + " " * 2 + f"""\033[31m {str([get_status])}  [GET]\033[0m""")
+                        if dir[0] != "/" or dir[0] == "/":
+                            to_remove.append(dir)
+                except Exception as e:
+                    tqdm.write(f"Error processing {dir}: {e}")
                     to_remove.append(dir)
-        except Exception as e:
-            tqdm.write(f"Error processing {dir}: {e}")
-            to_remove.append(dir)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
+    print("")
+    print("  \033[94m" + f"[PROBED]\033[0m {total_items} urls in {elapsed_time:.2f} seconds")
     for dir in to_remove:
         all_dirs.remove(dir)
         
 def clean_urls(url):
+    # try:
     if(url[:4] == "http"):
-        return url
-    elif (url[0] != "/"):
+            # url_pieces = url.split(".")
+            # custom_domain = url_pieces[1]
+            # end_half_of_url = url_pieces[2]
+            # custom_domain_with_end_half = custom_domain + "." + end_half_of_url
+            # domain = custom_domain_with_end_half.split('/')[0]
+            # return domain
+            return url
+    # except:
+    if (url[0] != "/"):
         url = "/" + url
         return url
     else:
         return url
+  
+   
 
 if __name__ == "__main__":
     if (args.stdout):
