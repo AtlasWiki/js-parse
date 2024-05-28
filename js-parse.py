@@ -42,6 +42,7 @@ parser.add_argument("--save", help="save prettified js files", action="store_tru
 parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
 parser.add_argument("-f", "--filter", help="removes false positives with http probing/request methods (use at your own risk)", action="store_true")
 parser.add_argument("-r", "--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
+parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
 # parser.add_argument("-k", "--kontrol", help="removes false positives with httpx/requests (use at your own risk)", choices=['ALL', 'API', 'FORBIDDEN'])
 
 file_group = parser.add_mutually_exclusive_group()
@@ -311,6 +312,9 @@ def filter_urls_with_tqdm():
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
     with httpx.Client(follow_redirects=True, headers=headers) as client:
         for dir in tqdm(all_dirs[:], desc=" Probing", unit='URL', total=total_items, bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False):
+            if (dir == "https://api.wepwn.ma/contact"): 
+                pass   
+            else:
                 try:
                     if dir[:4] == "http":
                         formatted_dir = dir
@@ -338,7 +342,7 @@ def filter_urls_with_tqdm():
                     get_status_full_message = verified_message_strip + f"{get_status_color}[{get_status_colored_message}][GET]{reset_color} "
                     post_status_full_message = verified_message_strip + f"{post_status_color}[{post_status_colored_message}[POST]{reset_color} "
                     get_and_post_full_message = get_status_full_message + post_status_full_message.replace(verified_message_strip, "")
-                    get_and_post_full_error_message = verified_message_strip + f"{get_status_blocked}[{get_status}][GET/POST]{reset_color} "
+                    get_and_post_full_error_message = verified_message_strip + f"{get_status_blocked}[{get_status}][GET] [{post_status}][POST]{reset_color} "
 
                     if (get_status_verified and post_status_verified):
                         head_status, options_status = str(client.head(formatted_dir).status_code), str(client.options(formatted_dir).status_code)
@@ -402,6 +406,9 @@ if __name__ == "__main__":
     if (args.stdout):
         pass
     else:
-        print(intro_logo)
+        if (args.no_logo):
+            pass
+        else:
+            print(intro_logo)
     verify_files()
     pass
