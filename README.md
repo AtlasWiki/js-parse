@@ -76,8 +76,9 @@ block third party url probing and probe target's urls:
 ```
 python js-parse.py https://youtube.com -f -r
 ```
-<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/3bf61885-4eb3-40b0-b11a-1a8d03742bc2">
-<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/0aca8a51-8969-48c4-9071-f24f0db0d85f">
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/53d4ec98-be10-4a8e-93b2-be59e5b30fa6">
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/9ce43f2b-5d7e-44d9-bad7-d8bca3c5173e">
+
 
 
 
