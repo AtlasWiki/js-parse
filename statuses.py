@@ -112,8 +112,6 @@ four_x_x_codes = {
     '401': 'Unauthorized',
     '402': 'Payment Required',
     '403': 'Forbidden',
-    '404': 'Not Found', 
-    '405': 'Method Not Allowed', 
     '406': 'Not Acceptable',
     '407': 'Proxy Authentication Required',
     '408': 'Request Timeout',
@@ -151,4 +149,9 @@ five_x_x_codes = {
     '508': 'Loop Detected',
     '510': 'Not Extended',
     '511': 'Network Authentication Required'
+}
+
+forbidden_x_x_codes = {
+    '401': 'Unauthorized',
+    '403': 'Forbidden'
 }
