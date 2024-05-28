@@ -381,6 +381,7 @@ def filter_urls_with_tqdm():
                                     tqdm.write(f'{options_head_status_full_message_others} \033[34m[{post_file_type}]\033[0m  {dir}')
                                 else:
                                     to_remove.append(dir)
+
                         elif (head_status_verified):
                             if(args.filter == 'all'):
                                 tqdm.write(f'{head_status_full_message_others} \033[34m[{post_file_type}]\033[0m  {dir}')
@@ -389,6 +390,7 @@ def filter_urls_with_tqdm():
                                     tqdm.write(f'{head_status_full_message_others} \033[34m[{post_file_type}]\033[0m  {dir}')
                                 else:
                                     to_remove.append(dir)
+
                         elif (options_status_verified):
                             if(args.filter == 'all'):
                                 tqdm.write(f'{options_status_full_message_others} \033[34m[{post_file_type}]\033[0m  {dir}')
@@ -409,10 +411,12 @@ def filter_urls_with_tqdm():
                     elif(get_status_verified):
                         if(args.filter == 'all'):
                             tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                        if (verified_four_codes_get):
-                            tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                        else:
-                            to_remove.append(dir)
+                        elif(args.filter == '4xx'):
+                            if (verified_four_codes_get):
+                                tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
+                            else:
+                                to_remove.append(dir)
+
                     elif(post_status_verified):
                         post_file_type = post_response.headers.get("Content-Type").split(";")[0]
                         if(args.filter == 'all'):
@@ -425,14 +429,13 @@ def filter_urls_with_tqdm():
                     else:
                         if(args.filter == 'all'):
                             tqdm.write(f'{get_and_post_full_error_message} {dir}')
+                            to_remove.append(dir)
                         elif(args.filter == '4xx'):
-                            if (verified_four_codes_post):
+                            if (verified_four_codes_post or verified_four_codes_get):
                                 tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
                             else:
                                 to_remove.append(dir)
-                        # removes local/relative urls
-                        if dir[0] != "/" or dir[0] == "/":
-                            to_remove.append(dir)
+                                
                 # removes absolute/http urls
                 except Exception as e:
                     # tqdm.write(f"Error processing {dir}: {e}") # for error checking
