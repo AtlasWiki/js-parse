@@ -64,7 +64,7 @@ allowed_status_codes = {
 blocked_status_codes = {
     '404': '\033[31m', # red
     '405': '\033[31m', # red
-    '400': '\033[31m'  
+    '400': '\033[31m'  # red
 }
 
 colored_status_codes = {
