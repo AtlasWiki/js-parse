@@ -1,27 +1,32 @@
 #!/usr/bin/env python3
-import re, os, requests
+import re, os, requests, jsbeautifier
+import argparse, httpx, time
+
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-import jsbeautifier
-import argparse
-import httpx
-import time
-import statuses
-# import logging
 
-allowed_status_codes = statuses.allowed_status_codes
-blocked_status_codes = statuses.blocked_status_codes
-colored_status_codes = statuses.colored_status_codes
-one_x_x_codes = statuses.one_x_x_codes
-two_x_x_codes = statuses.two_x_x_codes
-three_x_x_codes = statuses.three_x_x_codes
-four_x_x_codes = statuses.four_x_x_codes
-five_x_x_codes = statuses.five_x_x_codes
-forbidden_x_x_codes = statuses.forbidden_x_x_codes
+from js_parse_package.statuses import(
+    allowed_status_codes, 
+    blocked_status_codes, 
+    colored_status_codes, 
+    one_x_x_codes, 
+    two_x_x_codes, 
+    three_x_x_codes, 
+    four_x_x_codes,
+    five_x_x_codes, 
+    forbidden_x_x_codes
+)
+
+from js_parse_package.utils import (
+    clean_urls, 
+    parse_domain, 
+    remove_dupes
+)
+
 
 pretty_files = []
 get_py_filename = os.path.basename(__file__)
-target= ""
+target= {}
 all_dirs=[]
 intro_logo = f"""\u001b[31m
 
@@ -129,10 +134,9 @@ def fetch_html(url):
    
 def store_urls(url):
     try:
-        global target
-        target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
-        parsed_js_directory_path = f"{target}/parsed-urls/"
-        parsed_files_directory_path = f"{target}/parsed-files/"
+        target["domain"], file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
+        parsed_js_directory_path = f"""{target["domain"]}/parsed-urls/"""
+        parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
 
         if (args.isolate or args.merge):
             try:
@@ -151,7 +155,7 @@ def store_urls(url):
         try:
             if (args.isolate):
                 dir = quoted_dir.strip('"')
-                with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
+                with open(f"""{target["domain"]}/parsed-urls/{file_name}+dirs.txt""", "a", encoding="utf-8") as directories:
                     directories.write(dir + '\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
@@ -161,7 +165,7 @@ def store_urls(url):
                 all_dirs.append(dir)
         finally:
              if(args.save):
-                parsed_files_directory_path = f"{target}/parsed-files/"
+                parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
                 if not (os.path.exists(parsed_files_directory_path)):
                     os.makedirs(parsed_files_directory_path)
 
@@ -190,12 +194,12 @@ def move_stored_files():
         source_path = os.getcwd()
         source_filename = f"pretty-file{prettyfile}.txt"
         source_file = os.path.join(source_path, source_filename)
-        destination_dir = os.path.join(source_path, f"{target}/parsed-files")
+        destination_dir = os.path.join(source_path, f"""{target["domain"]}/parsed-files""")
         destination_file = os.path.join(destination_dir, source_filename)
         os.replace(source_file, destination_file)
 
 def write_files():
-    remove_dupes()
+    remove_dupes(all_dirs)
     if (args.remove_third_parties):
         if (args.filter and args.stdout):
             filter_urls_without_tqdm()
@@ -208,14 +212,14 @@ def write_files():
             filter_urls_without_tqdm()
     elif (args.filter):
         filter_urls_with_tqdm()
-    with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
+    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "w", encoding="utf-8") as directories:
         directories.write('')
-    with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
+    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "a", encoding="utf-8") as directories:
         for unique_dir in all_dirs:
             directories.write(clean_urls(unique_dir) + '\n')
 
 def stdout_dirs():
-    remove_dupes()
+    remove_dupes(all_dirs)
     if (args.remove_third_parties):
         if (args.filter and args.stdout):
             filter_urls_without_tqdm()
@@ -231,10 +235,6 @@ def stdout_dirs():
     for dir in all_dirs:
         print(clean_urls(dir))
         
-
-def remove_dupes():
-    all_dirs[:] = list(dict.fromkeys(all_dirs))
-
 def process_files_with_tqdm():
     custom_bar_format = "[[\033[94m  {desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}]  ]]"
     total_items = len(list(extract_files(target_url)))
@@ -500,22 +500,6 @@ def filter_urls_with_tqdm():
 
     for dir in to_remove:
         all_dirs.remove(dir)
-
-def clean_urls(url):
-    if(url[:4] == "http"):
-            
-            return url
-    if (url[0] != "/"):
-        url = "/" + url
-        return url
-    else:
-        return url
-  
-def parse_domain(http_url):
-    url_pieces = http_url.split("/", 3)
-    domain_labels = url_pieces[2].split(".")
-    registered_domain = domain_labels[-2] + "." + domain_labels[-1] 
-    return registered_domain
 
 if __name__ == "__main__":
     if (args.stdout):
