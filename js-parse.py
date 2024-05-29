@@ -7,6 +7,7 @@ import argparse
 import httpx
 import time
 import statuses
+from api_urls import api_dict
 # import logging
 
 allowed_status_codes = statuses.allowed_status_codes
@@ -51,10 +52,9 @@ f'''
 parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
 parser.add_argument("--save", help="save prettified js files", action="store_true")
 parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
-parser.add_argument("-f", "--filter", help="removes false positives with http probing/request methods (use at your own risk). 4xx does not include 404 and 405", choices=['all', 'api', '1xx', '2xx', '3xx', '4xx', '5xx', 'forbidden'])
+parser.add_argument("-f", "--filter", help="removes false positives with http probing/request methods (use at your own risk). 4xx does not include 404 and 405", choices=['all', '1xx', '2xx', '3xx', '4xx', '5xx', 'forbidden'])
 parser.add_argument("-r", "--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
 parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
-# parser.add_argument("-k", "--kontrol", help="removes false positives with httpx/requests (use at your own risk)", choices=['ALL', 'API', '1xx', '2xx', '3xx', '4xx', '5xx'])
 
 file_group = parser.add_mutually_exclusive_group()
 file_group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
@@ -382,6 +382,8 @@ def filter_urls_with_tqdm():
     total_items = len(all_dirs)
     to_remove = []
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
+    if (args.filter == 'api'):
+        api_list = []
     with httpx.Client(follow_redirects=True, headers=headers) as client:
         for dir in tqdm(all_dirs[:], desc=" Probing", unit='URL', total=total_items, bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False):
             if (dir == "https://api.wepwn.ma/contact"): 
@@ -454,7 +456,10 @@ def filter_urls_with_tqdm():
                         post_status_verified = verified_forbidden_code_post
                         get_status_verified = verified_forbidden_code_get
                         
-                  
+                    if (args.filter == 'api'):
+                        if (api_dict.get(dir, False)):
+                            api_list.append(dir)
+
                     if (get_status_verified and post_status_verified):
                         head_status, options_status = str(client.head(formatted_dir).status_code), str(client.options(formatted_dir).status_code)
                         head_status_color, options_status_color = str(colored_status_codes.get(head_status[0])), str(colored_status_codes.get(options_status[0]))
@@ -466,21 +471,34 @@ def filter_urls_with_tqdm():
 
                         if (head_status_verified and options_status_verified):
                             tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
+                            if (args.filter == 'api'):
+                                api_list.append(dir)
 
                         elif (head_status_verified):
                             tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
+                            if (args.filter == 'api'):
+                                api_list.append(dir)
 
                         elif (options_status_verified):
                             tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-
+                            if (args.filter == 'api'):
+                                api_list.append(dir)
                         else:
                             tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                    
+                            if (args.filter == 'api'):
+                                api_list.append(dir)
+
                     elif(get_status_verified):
-                        tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
+                        if not (args.filter == 'api'):
+                            tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
+                        else:
+                            pass
 
                     elif(post_status_verified):
-                        tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
+                        if not (args.filter == 'api'):
+                            tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
+                        else:
+                            pass
     
                     else:
                         if (args.filter=="all"):
@@ -499,6 +517,7 @@ def filter_urls_with_tqdm():
 
     print("")
     print("  \033[94m" + f"[PROBED]\033[0m {total_items} urls in {elapsed_time:.2f} seconds\n")
+
     for dir in to_remove:
         all_dirs.remove(dir)
 
