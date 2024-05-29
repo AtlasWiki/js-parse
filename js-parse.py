@@ -7,7 +7,6 @@ import argparse
 import httpx
 import time
 import statuses
-from api_urls import api_dict
 # import logging
 
 allowed_status_codes = statuses.allowed_status_codes
@@ -382,8 +381,6 @@ def filter_urls_with_tqdm():
     total_items = len(all_dirs)
     to_remove = []
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
-    if (args.filter == 'api'):
-        api_list = []
     with httpx.Client(follow_redirects=True, headers=headers) as client:
         for dir in tqdm(all_dirs[:], desc=" Probing", unit='URL', total=total_items, bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False):
             if (dir == "https://api.wepwn.ma/contact"): 
@@ -455,10 +452,6 @@ def filter_urls_with_tqdm():
                     elif (args.filter=='forbidden'):
                         post_status_verified = verified_forbidden_code_post
                         get_status_verified = verified_forbidden_code_get
-                        
-                    if (args.filter == 'api'):
-                        if (api_dict.get(dir, False)):
-                            api_list.append(dir)
 
                     if (get_status_verified and post_status_verified):
                         head_status, options_status = str(client.head(formatted_dir).status_code), str(client.options(formatted_dir).status_code)
@@ -471,34 +464,21 @@ def filter_urls_with_tqdm():
 
                         if (head_status_verified and options_status_verified):
                             tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                            if (args.filter == 'api'):
-                                api_list.append(dir)
 
                         elif (head_status_verified):
                             tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                            if (args.filter == 'api'):
-                                api_list.append(dir)
-
+                
                         elif (options_status_verified):
                             tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                            if (args.filter == 'api'):
-                                api_list.append(dir)
                         else:
                             tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                            if (args.filter == 'api'):
-                                api_list.append(dir)
 
                     elif(get_status_verified):
-                        if not (args.filter == 'api'):
-                            tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                        else:
-                            pass
+                        tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
 
                     elif(post_status_verified):
-                        if not (args.filter == 'api'):
-                            tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
-                        else:
-                            pass
+                        tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
+                     
     
                     else:
                         if (args.filter=="all"):
