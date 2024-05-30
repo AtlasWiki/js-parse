@@ -14,6 +14,7 @@
 + **File Association:** parses the name of the js files and writes the associated urls to them.
 + **URL Filter/Check:** verifies legit urls and removes false positives.
 + **Disable Third Party URL Probing:** disables http requests send to third party urls.
++ **Fast HTTP Probing**: uses concurrent requests and allow you to optionally set the requests per sec.
 <br>
 
 ## Installation:
@@ -53,9 +54,13 @@ js-parse https://youtube.com
 -h, --help            show this help message and exit
 --save                save prettified js files (default: False)
 -s, --stdout          stdout friendly, displays urls only in stdout compatibility. also known as silent mode (default: False)
--f, --filter          removes false positives with http probing/request methods (use at your own risk) (default: False)
--r, --remove-third-parties
+-f {all,1xx,2xx,3xx,4xx,5xx,forbidden}, --filter {all,1xx,2xx,3xx,4xx,5xx,forbidden}
+                      removes false positives with http probing/request methods (use at your own risk). 4xx does not include 404 and 405 (default: None)
+--remove-third-parties
                       does not probe third-party urls with request methods (default: False)
+-n, --no-logo         hides logo (default: False)
+-r REQUESTS, --requests REQUESTS
+                      the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec which would be actually 24) (default: 12)
 -m, --merge           create file and merge all urls into it (default: False)
 -i, --isolate         create multiple files and store urls where they were parsed from (default: False)
 ```
@@ -68,19 +73,14 @@ python js-parse.py https://youtube.com
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/698d7937-f660-46ae-8ae5-ad33e5057105">
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/424ba007-0328-4d96-ba9d-ddc83cb0d86f">
 
-
-
 <br>
 
 block third party url probing and probe target's urls: 
 ```
-python js-parse.py https://youtube.com -f -r
+python js-parse.py https://youtube.com -f all --remove-third-parties
 ```
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/53d4ec98-be10-4a8e-93b2-be59e5b30fa6">
-<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/9ce43f2b-5d7e-44d9-bad7-d8bca3c5173e">
-
-
-
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/1e0910ae-eb71-4a85-9ef4-b27ac567a5fb">
 
 
 <br>
