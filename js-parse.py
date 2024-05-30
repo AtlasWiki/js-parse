@@ -24,6 +24,7 @@ pretty_files = []
 get_py_filename = os.path.basename(__file__)
 target= ""
 all_dirs=[]
+to_remove = []
 intro_logo = f"""\u001b[31m
 
 ░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
@@ -53,8 +54,9 @@ parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http o
 parser.add_argument("--save", help="save prettified js files", action="store_true")
 parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
 parser.add_argument("-f", "--filter", help="removes false positives with http probing/request methods (use at your own risk). 4xx does not include 404 and 405", choices=['all', '1xx', '2xx', '3xx', '4xx', '5xx', 'forbidden'])
-parser.add_argument("-r", "--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
+parser.add_argument("--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
 parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
+parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec which would be actually 24)", type=int, default=12)
 
 file_group = parser.add_mutually_exclusive_group()
 file_group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
@@ -199,16 +201,24 @@ def write_files():
     remove_dupes()
     if (args.remove_third_parties):
         if (args.filter and args.stdout):
-            filter_urls_without_tqdm()
+            asyncio.run(filter_urls())
         elif (args.filter):
-            filter_urls_with_tqdm()
+            asyncio.run(filter_urls())
         else:
-            print("must have -f (filter) option with -r (remove third parties)")
+            print("must have -f (filter) option with --remove-third-parties")
+            quit()
+    elif (args.requests):
+        if (args.filter and args.stdout):
+            asyncio.run(filter_urls())
+        elif (args.filter):
+            asyncio.run(filter_urls())
+        else:
+            print("must have -f (filter) option with -r (--requests)")
             quit()
     elif (args.filter and args.stdout):
-            filter_urls_without_tqdm()
+            asyncio.run(filter_urls())
     elif (args.filter):
-        filter_urls_with_tqdm()
+        asyncio.run(filter_urls())
     with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
         directories.write('')
     with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
@@ -219,16 +229,24 @@ def stdout_dirs():
     remove_dupes()
     if (args.remove_third_parties):
         if (args.filter and args.stdout):
-            filter_urls_without_tqdm()
+            asyncio.run(filter_urls())
         elif (args.filter):
-            filter_urls_with_tqdm()
+            asyncio.run(filter_urls())
         else:
-            print("must have -f (filter) option with -r (remove third parties)")
+            print("must have -f (filter) option with --remove-third-parties")
+            quit()
+    elif (args.requests):
+        if (args.filter and args.stdout):
+            asyncio.run(filter_urls())
+        elif (args.filter):
+            asyncio.run(filter_urls())
+        else:
+            print("must have -f (filter) option with -r (--requests)")
             quit()
     elif (args.filter and args.stdout):
-            filter_urls_without_tqdm()
+            asyncio.run(filter_urls())
     elif (args.filter):
-        filter_urls_with_tqdm()
+        asyncio.run(filter_urls())
     for dir in all_dirs:
         print(clean_urls(dir))
         
@@ -280,227 +298,184 @@ def process_files_without_tqdm():
 # logging.basicConfig(level=logging.INFO, format='%(message)s')
 # logger = logging.getLogger()
 
-def filter_urls_without_tqdm():
-    to_remove = []
-    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
+def format_dir(dir):
+    if (dir == "https://api.wepwn.ma/contact"): 
+        pass   
+    else:
+        if dir[:4] == "http":
+            formatted_dir = dir
+            if (args.remove_third_parties):
+                curr_domain = parse_domain(formatted_dir)
+                target_domain = parse_domain(args.url) 
+                if (curr_domain != target_domain):
+                    formatted_dir = ""
+        elif dir[0] != "/":
+            formatted_dir = args.url + f'/{dir}'
+        else:
+            formatted_dir = args.url + dir
+    return formatted_dir
+
+# all_dirs_lock = asyncio.Lock()
+
+async def fetch_dir(client, dir):
+    try:
+        # get/post requests
+        get_response, post_response = await client.get(format_dir(dir)), await client.post(format_dir(dir))
+        get_status, post_status = str(get_response.status_code), str(post_response.status_code)
+        get_file_type, post_file_type = '', ''
+
+        try:
+            get_file_type = get_response.headers.get("Content-Type").split(';')[0]
+        except: 
+            get_file_type = get_response.headers.get("Content-Type")
+        try:
+            post_file_type = post_response.headers.get("Content-Type").split(';')[0]
+        except: 
+            post_file_type = post_response.headers.get("Content-Type")
+            
+
+        # get/post messages
+        if not (args.stdout): 
+            get_status_color, post_status_color= str(colored_status_codes.get(get_status[0])), str(colored_status_codes.get(post_status[0]))
+            get_status_colored_message, post_status_colored_message =  get_status_color + get_status, post_status_color + post_status
+        # get/post conditions
+        get_status_verified, post_status_verified = allowed_status_codes.get(f'{get_status}', False), allowed_status_codes.get(f'{post_status}', False)
+        get_status_blocked = blocked_status_codes.get(f'{get_status}', False)
+        verified_one_codes_post, verified_one_codes_get = one_x_x_codes.get(post_status, False), one_x_x_codes.get(get_status, False)
+        verified_two_codes_post, verified_two_codes_get = two_x_x_codes.get(post_status, False), two_x_x_codes.get(get_status, False)
+        verified_three_codes_post, verified_three_codes_get = three_x_x_codes.get(post_status, False), three_x_x_codes.get(get_status, False)
+        verified_four_codes_post, verified_four_codes_get = four_x_x_codes.get(post_status, False), four_x_x_codes.get(get_status, False)
+        verified_five_codes_post, verified_five_codes_get = five_x_x_codes.get(post_status, False), five_x_x_codes.get(get_status, False)
+        verified_forbidden_code_post, verified_forbidden_code_get =  forbidden_x_x_codes.get(post_status, False), forbidden_x_x_codes.get(get_status, False)
+        # get/post colored statements
+        if not (args.stdout):
+            reset_color = '\033[0m'
+            verified_message_strip = f"\033[33m[Verified]{reset_color} "
+            get_status_full_message = verified_message_strip + f"{get_status_color}[{get_status_colored_message}][GET]{reset_color} "
+            post_status_full_message = verified_message_strip + f"{post_status_color}[{post_status_colored_message}][POST]{reset_color} "
+            get_and_post_full_message = get_status_full_message + post_status_full_message.replace(verified_message_strip, "")
+            get_and_post_full_error_message = verified_message_strip + f"{get_status_blocked}[{get_status}][GET] [{post_status}][POST]{reset_color} "
+        
+        
+        if (args.filter=='1xx'):
+            get_status_verified = verified_one_codes_get
+            post_status_verified = verified_one_codes_post
+        elif (args.filter=='2xx'):
+            get_status_verified = verified_two_codes_get
+            post_status_verified = verified_two_codes_post
+        elif (args.filter=='3xx'):
+            get_status_verified = verified_three_codes_get
+            post_status_verified = verified_three_codes_post
+        elif (args.filter == '4xx'):
+            get_status_verified = verified_four_codes_get
+            post_status_verified = verified_four_codes_post
+        elif (args.filter == '5xx'):
+            get_status_verified = verified_five_codes_get
+            post_status_verified = verified_five_codes_post
+        elif (args.filter=='forbidden'):
+            post_status_verified = verified_forbidden_code_post
+            get_status_verified = verified_forbidden_code_get
+
+        if (get_status_verified and post_status_verified):
+            head_response, options_response = await client.head(format_dir(dir)), await client.options(format_dir(dir))
+            head_status, options_status =  str(head_response.status_code),str(options_response.status_code)
+            if not (args.stdout):
+                head_status_color, options_status_color = str(colored_status_codes.get(head_status[0])), str(colored_status_codes.get(options_status[0]))
+                head_status_colored_message, options_status_colored_message = head_status_color + head_status, options_status_color + options_status
+                head_status_verified, options_status_verified = allowed_status_codes.get(f'{head_status}', False), allowed_status_codes.get(f'{options_status}', False)
+                head_status_full_message_others = get_and_post_full_message + f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} "
+                options_status_full_message_others = get_and_post_full_message + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
+                options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
+
+            if (head_status_verified and options_status_verified):
+                if not (args.stdout):
+                    tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
+
+            elif (head_status_verified):
+                if not (args.stdout):
+                    tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
     
-    with httpx.Client(follow_redirects=True, headers=headers) as client:
-        for dir in all_dirs[:]:
-            if dir == "https://api.wepwn.ma/contact":
-                continue
+            elif (options_status_verified):
+                if not (args.stdout):
+                    tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
+            else:
+                if not (args.stdout):
+                    tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
 
-            try:
-                if dir[:4] == "http":
-                    formatted_dir = dir
-                    if args.remove_third_parties:
-                        curr_domain = parse_domain(formatted_dir)
-                        target_domain = parse_domain(args.url)
-                        if curr_domain != target_domain:
-                            formatted_dir = ""
-                elif dir[0] != "/":
-                    formatted_dir = args.url + f'/{dir}'
-                else:
-                    formatted_dir = args.url + dir
+        elif(get_status_verified):
+            if not (args.stdout):
+                tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
 
-                get_response = client.get(formatted_dir)
-                post_response = client.post(formatted_dir)
-                get_status = str(get_response.status_code)
-                post_status = str(post_response.status_code)
-               
+        elif(post_status_verified):
+            if not (args.stdout):
+                tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
+            
 
-                get_status_verified = allowed_status_codes.get(f'{get_status}', False)
-                post_status_verified = allowed_status_codes.get(f'{post_status}', False)
+        else:
+            if (args.filter == "all"):
+                if not (args.stdout):
+                    tqdm.write(f'{get_and_post_full_error_message} {dir}')
 
-                if args.filter == '1xx':
-                    get_status_verified = one_x_x_codes.get(get_status, False)
-                    post_status_verified = one_x_x_codes.get(post_status, False)
-                elif args.filter == '2xx':
-                    get_status_verified = two_x_x_codes.get(get_status, False)
-                    post_status_verified = two_x_x_codes.get(post_status, False)
-                elif args.filter == '3xx':
-                    get_status_verified = three_x_x_codes.get(get_status, False)
-                    post_status_verified = three_x_x_codes.get(post_status, False)
-                elif args.filter == '4xx':
-                    get_status_verified = four_x_x_codes.get(get_status, False)
-                    post_status_verified = four_x_x_codes.get(post_status, False)
-                elif args.filter == '5xx':
-                    get_status_verified = five_x_x_codes.get(get_status, False)
-                    post_status_verified = five_x_x_codes.get(post_status, False)
-                elif args.filter == 'forbidden':
-                    post_status_verified = forbidden_x_x_codes.get(post_status, False)
-                    get_status_verified = forbidden_x_x_codes.get(get_status, False)
-
-                if get_status_verified and post_status_verified:
-                    head_response = client.head(formatted_dir)
-                    options_response = client.options(formatted_dir)
-                    head_status = str(head_response.status_code)
-                    options_status = str(options_response.status_code)              
-                    head_status_verified = allowed_status_codes.get(f'{head_status}', False)
-                    options_status_verified = allowed_status_codes.get(f'{options_status}', False)
-                   
-                    if head_status_verified and options_status_verified:
-                        pass
-
-                    elif head_status_verified:
-                        pass
-
-                    elif options_status_verified:
-                        pass
-
-                    else:
-                        pass
-
-                elif get_status_verified:
-                    pass
-
-                elif post_status_verified:
-                    pass
-
-                else:
-                    if args.filter == "all":
-                        pass
-
-                    if dir[0] != "/" or dir[0] == "/":
-                        to_remove.append(dir)
-
-            except Exception as e:
-                # print(f"Error processing {dir}: {e}")
-                # logger.error(f"Error processing {dir}: {e}")
+            if dir[0] != "/" or dir[0] == "/":
                 to_remove.append(dir)
+    
+    except Exception as e:
+        # tqdm.write(f"Error processing {dir}: {e}") # for error checking
+        to_remove.append(dir)
 
-    for dir in to_remove:
-        # try:
-        all_dirs.remove(dir)
-        #     logger.info(f"Removed {dir} from all_dirs")
-        # except ValueError as e:
-        #     logger.error(f"Error removing {dir} from all_dirs: {e}")
-
-def filter_urls_with_tqdm():
+    
+async def filter_urls():
     print('\nVerifying URLs, please wait')
     start_time = time.time()
     custom_bar_format = "[[\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] ]]"
-    total_items = len(all_dirs)
-    to_remove = []
+    total_dir_counts = len(all_dirs)
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
-    with httpx.Client(follow_redirects=True, headers=headers) as client:
-        for dir in tqdm(all_dirs[:], desc=" Probing", unit='URL', total=total_items, bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False):
-            if (dir == "https://api.wepwn.ma/contact"): 
-                pass   
-            else:
-                try:
-                    if dir[:4] == "http":
-                        formatted_dir = dir
-                        if (args.remove_third_parties):
-                            curr_domain = parse_domain(formatted_dir)
-                            target_domain = parse_domain(args.url) 
-                            if (curr_domain != target_domain):
-                                formatted_dir = ""
-                    elif dir[0] != "/":
-                        formatted_dir = args.url + f'/{dir}'
-                    else:
-                        formatted_dir = args.url + dir
-                    # get/post requests
-                    get_response, post_response = client.get(formatted_dir), client.post(formatted_dir)
-                    get_status, post_status = str(get_response.status_code), str(post_response.status_code)
-                    get_file_type, post_file_type = '', ''
-
-                    try:
-                        get_file_type = get_response.headers.get("Content-Type").split(';')[0]
-                    except: 
-                        get_file_type = get_response.headers.get("Content-Type")
-                    try:
-                        post_file_type = post_response.headers.get("Content-Type").split(';')[0]
-                    except: 
-                        post_file_type = post_response.headers.get("Content-Type")
-                       
-
-                    # get/post messages 
-                    get_status_color, post_status_color= str(colored_status_codes.get(get_status[0])), str(colored_status_codes.get(post_status[0]))
-                    get_status_colored_message, post_status_colored_message =  get_status_color + get_status, post_status_color + post_status
-                    # get/post conditions
-                    get_status_verified, post_status_verified = allowed_status_codes.get(f'{get_status}', False), allowed_status_codes.get(f'{post_status}', False)
-                    get_status_blocked = blocked_status_codes.get(f'{get_status}', False)
-                    verified_one_codes_post, verified_one_codes_get = one_x_x_codes.get(post_status, False), one_x_x_codes.get(get_status, False)
-                    verified_two_codes_post, verified_two_codes_get = two_x_x_codes.get(post_status, False), two_x_x_codes.get(get_status, False)
-                    verified_three_codes_post, verified_three_codes_get = three_x_x_codes.get(post_status, False), three_x_x_codes.get(get_status, False)
-                    verified_four_codes_post, verified_four_codes_get = four_x_x_codes.get(post_status, False), four_x_x_codes.get(get_status, False)
-                    verified_five_codes_post, verified_five_codes_get = five_x_x_codes.get(post_status, False), five_x_x_codes.get(get_status, False)
-                    verified_forbidden_code_post, verified_forbidden_code_get =  forbidden_x_x_codes.get(post_status, False), forbidden_x_x_codes.get(get_status, False)
-                    # get/post colored statements
-                    reset_color = '\033[0m'
-                    verified_message_strip = f"\033[33m[Verified]{reset_color} "
-                    get_status_full_message = verified_message_strip + f"{get_status_color}[{get_status_colored_message}][GET]{reset_color} "
-                    post_status_full_message = verified_message_strip + f"{post_status_color}[{post_status_colored_message}][POST]{reset_color} "
-                    get_and_post_full_message = get_status_full_message + post_status_full_message.replace(verified_message_strip, "")
-                    get_and_post_full_error_message = verified_message_strip + f"{get_status_blocked}[{get_status}][GET] [{post_status}][POST]{reset_color} "
+    tasks = []
+    batch_size = args.requests
+    if not (args.stdout):
+        async with httpx.AsyncClient(follow_redirects=True, headers=headers) as client:
+            with tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False) as pbar:
+                for dir_count in range(0, total_dir_counts, batch_size):
+                    # Calculate the end index for the current batch
+                    end_index = min(dir_count + batch_size, total_dir_counts)
                     
+                    for index in range(dir_count, end_index):
+                        if index < len(all_dirs):
+                            tasks.append(fetch_dir(client, all_dirs[index]))
+
+                    # Run all tasks concurrently for the current batch
+                    for task in asyncio.as_completed(tasks):
+                        await task
+                        pbar.update(1)  # Update the progress bar for each completed task
                     
-                    if (args.filter=='1xx'):
-                        get_status_verified = verified_one_codes_get
-                        post_status_verified = verified_one_codes_post
-                    elif (args.filter=='2xx'):
-                        get_status_verified = verified_two_codes_get
-                        post_status_verified = verified_two_codes_post
-                    elif (args.filter=='3xx'):
-                        get_status_verified = verified_three_codes_get
-                        post_status_verified = verified_three_codes_post
-                    elif (args.filter == '4xx'):
-                        get_status_verified = verified_four_codes_get
-                        post_status_verified = verified_four_codes_post
-                    elif (args.filter == '5xx'):
-                        get_status_verified = verified_five_codes_get
-                        post_status_verified = verified_five_codes_post
-                    elif (args.filter=='forbidden'):
-                        post_status_verified = verified_forbidden_code_post
-                        get_status_verified = verified_forbidden_code_get
+                    tasks = []  # Clear the tasks list for the next batch
+       
+       
+        end_time = time.time()
+        elapsed_time = end_time - start_time
 
-                    if (get_status_verified and post_status_verified):
-                        head_status, options_status = str(client.head(formatted_dir).status_code), str(client.options(formatted_dir).status_code)
-                        head_status_color, options_status_color = str(colored_status_codes.get(head_status[0])), str(colored_status_codes.get(options_status[0]))
-                        head_status_colored_message, options_status_colored_message = head_status_color + head_status, options_status_color + options_status
-                        head_status_verified, options_status_verified = allowed_status_codes.get(f'{head_status}', False), allowed_status_codes.get(f'{options_status}', False)
-                        head_status_full_message_others = get_and_post_full_message + f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} "
-                        options_status_full_message_others = get_and_post_full_message + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
-                        options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
+        print("")
+        print("  \033[94m" + f"[PROBED]\033[0m {total_dir_counts} urls in {elapsed_time:.2f} seconds\n")
 
-                        if (head_status_verified and options_status_verified):
-                            tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-
-                        elif (head_status_verified):
-                            tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
+        
+    else:
+        async with httpx.AsyncClient(follow_redirects=True, headers=headers) as client:
+            for dir_count in range(0, total_dir_counts, batch_size):
+                # Calculate the end index for the current batch
+                end_index = min(dir_count + batch_size, total_dir_counts)
                 
-                        elif (options_status_verified):
-                            tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                        else:
-                            tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
+                for index in range(dir_count, end_index):
+                    if index < len(all_dirs):
+                        tasks.append(fetch_dir(client, all_dirs[index]))
 
-                    elif(get_status_verified):
-                        tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
+                # Run all tasks concurrently for the current batch
+                for task in asyncio.as_completed(tasks):
+                    await task
 
-                    elif(post_status_verified):
-                        tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
-                     
-    
-                    else:
-                        if (args.filter=="all"):
-                            tqdm.write(f'{get_and_post_full_error_message} {dir}')
+                tasks = []  # Clear the tasks list for the next batch
 
-                        if dir[0] != "/" or dir[0] == "/":
-                            to_remove.append(dir)
-                  
-                # removes absolute/http urls
-                except Exception as e:
-                    # tqdm.write(f"Error processing {dir}: {e}") # for error checking
-                    to_remove.append(dir)
-
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    print("")
-    print("  \033[94m" + f"[PROBED]\033[0m {total_items} urls in {elapsed_time:.2f} seconds\n")
-
-    for dir in to_remove:
-        all_dirs.remove(dir)
+    for dirs in to_remove:
+            all_dirs.remove(dirs)
 
 def clean_urls(url):
     if(url[:4] == "http"):
