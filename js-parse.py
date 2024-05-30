@@ -22,7 +22,7 @@ forbidden_x_x_codes = statuses.forbidden_x_x_codes
 
 pretty_files = []
 get_py_filename = os.path.basename(__file__)
-target= ""
+target= {}
 all_dirs=[]
 to_remove = []
 intro_logo = f"""\u001b[31m
@@ -132,10 +132,9 @@ def fetch_html(url):
    
 def store_urls(url):
     try:
-        global target
-        target, file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
-        parsed_js_directory_path = f"{target}/parsed-urls/"
-        parsed_files_directory_path = f"{target}/parsed-files/"
+        target["domain"], file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
+        parsed_js_directory_path = f"""{target["domain"]}/parsed-urls/"""
+        parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
 
         if (args.isolate or args.merge):
             try:
@@ -154,7 +153,7 @@ def store_urls(url):
         try:
             if (args.isolate):
                 dir = quoted_dir.strip('"')
-                with open(f"{target}/parsed-urls/{file_name}+dirs.txt", "a", encoding="utf-8") as directories:
+                with open(f"""{target["domain"]}/parsed-urls/{file_name}+dirs.txt""", "a", encoding="utf-8") as directories:
                     directories.write(dir + '\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
@@ -164,7 +163,7 @@ def store_urls(url):
                 all_dirs.append(dir)
         finally:
              if(args.save):
-                parsed_files_directory_path = f"{target}/parsed-files/"
+                parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
                 if not (os.path.exists(parsed_files_directory_path)):
                     os.makedirs(parsed_files_directory_path)
 
@@ -193,7 +192,7 @@ def move_stored_files():
         source_path = os.getcwd()
         source_filename = f"pretty-file{prettyfile}.txt"
         source_file = os.path.join(source_path, source_filename)
-        destination_dir = os.path.join(source_path, f"{target}/parsed-files")
+        destination_dir = os.path.join(source_path, f"""{target["domain"]}/parsed-files""")
         destination_file = os.path.join(destination_dir, source_filename)
         os.replace(source_file, destination_file)
 
@@ -219,9 +218,9 @@ def write_files():
             asyncio.run(filter_urls())
     elif (args.filter):
         asyncio.run(filter_urls())
-    with open(f"{target}/parsed-urls/all_urls.txt", "w", encoding="utf-8") as directories:
+    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "w", encoding="utf-8") as directories:
         directories.write('')
-    with open(f"{target}/parsed-urls/all_urls.txt", "a", encoding="utf-8") as directories:
+    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "a", encoding="utf-8") as directories:
         for unique_dir in all_dirs:
             directories.write(clean_urls(unique_dir) + '\n')
 
