@@ -363,7 +363,7 @@ def filter_urls_without_tqdm():
                         to_remove.append(dir)
 
             except Exception as e:
-                print(f"Error processing {dir}: {e}")
+                # print(f"Error processing {dir}: {e}")
                 # logger.error(f"Error processing {dir}: {e}")
                 to_remove.append(dir)
 
