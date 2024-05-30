@@ -57,6 +57,7 @@ parser.add_argument("-f", "--filter", help="removes false positives with http pr
 parser.add_argument("--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
 parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
 parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec which would be actually 24)", type=int, default=12)
+parser.add_argument("--scope", help="specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com", nargs="*")
 
 file_group = parser.add_mutually_exclusive_group()
 file_group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
@@ -206,14 +207,6 @@ def write_files():
         else:
             print("must have -f (filter) option with --remove-third-parties")
             quit()
-    elif (args.requests):
-        if (args.filter and args.stdout):
-            asyncio.run(filter_urls())
-        elif (args.filter):
-            asyncio.run(filter_urls())
-        else:
-            print("must have -f (filter) option with -r (--requests)")
-            quit()
     elif (args.filter and args.stdout):
             asyncio.run(filter_urls())
     elif (args.filter):
@@ -234,16 +227,8 @@ def stdout_dirs():
         else:
             print("must have -f (filter) option with --remove-third-parties")
             quit()
-    elif (args.requests):
-        if (args.filter and args.stdout):
-            asyncio.run(filter_urls())
-        elif (args.filter):
-            asyncio.run(filter_urls())
-        else:
-            print("must have -f (filter) option with -r (--requests)")
-            quit()
     elif (args.filter and args.stdout):
-            asyncio.run(filter_urls())
+        asyncio.run(filter_urls())
     elif (args.filter):
         asyncio.run(filter_urls())
     for dir in all_dirs:
@@ -257,14 +242,20 @@ def process_files_with_tqdm():
     custom_bar_format = "[[\033[94m  {desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}]  ]]"
     total_items = len(list(extract_files(target_url)))
     start_time = time.time()
+    scope_list = args.scope
     for js_file in tqdm(extract_files(target_url), desc="Extracting", unit='URL', bar_format=custom_bar_format, total=total_items, position=4, dynamic_ncols=True, leave=False):
         # handles absolute urls that belong to target's domain
         if 'http' in js_file or 'https' in js_file:
-            # if (parse_domain(target_url) == parse_domain(js_file)):
-                tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+            if (parse_domain(target_url) == parse_domain(js_file)):
                 store_urls(js_file)
-            # else:
-            #     tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
+                tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+            else:
+                try:
+                    True if [True if parse_domain(js_file) in scope else False for scope in scope_list].index(True) else False
+                    store_urls(js_file)
+                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+                except:
+                    tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
         else:
             # handles both relative files and relative urls
             if (js_file[0] != "/"): 
@@ -281,11 +272,18 @@ def process_files_with_tqdm():
  
 
 def process_files_without_tqdm():
+    scope_list = args.scope
     for js_file in extract_files(target_url):
         # handles absolute urls that belong to target's domain
         if 'http' in js_file or 'https' in js_file:
-            if target_url in js_file:
+            if (parse_domain(target_url) == parse_domain(js_file)):
                 store_urls(js_file)
+            else:
+                try:
+                    True if [True if parse_domain(js_file) in scope else False for scope in scope_list].index(True) else False
+                    store_urls(js_file)
+                except:
+                    pass
         else:
             # handles both relative files and relative urls
             if (js_file[0] != "/"): 
