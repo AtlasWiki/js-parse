@@ -7,6 +7,7 @@ import argparse
 import httpx
 import time
 import statuses
+import asyncio
 # import logging
 
 allowed_status_codes = statuses.allowed_status_codes
@@ -242,11 +243,11 @@ def process_files_with_tqdm():
     for js_file in tqdm(extract_files(target_url), desc="Extracting", unit='URL', bar_format=custom_bar_format, total=total_items, position=4, dynamic_ncols=True, leave=False):
         # handles absolute urls that belong to target's domain
         if 'http' in js_file or 'https' in js_file:
-            if (parse_domain(target_url) == parse_domain(js_file)):
+            # if (parse_domain(target_url) == parse_domain(js_file)):
                 tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
                 store_urls(js_file)
-            else:
-                tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
+            # else:
+            #     tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
         else:
             # handles both relative files and relative urls
             if (js_file[0] != "/"): 
@@ -363,7 +364,7 @@ def filter_urls_without_tqdm():
                         to_remove.append(dir)
 
             except Exception as e:
-                print(f"Error processing {dir}: {e}")
+                # print(f"Error processing {dir}: {e}")
                 # logger.error(f"Error processing {dir}: {e}")
                 to_remove.append(dir)
 
