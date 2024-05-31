@@ -1,9 +1,10 @@
 from tqdm import tqdm
-import time
+import time, asyncio
 from .fetch_and_extract_files import extract_files
 from .utils import parse_domain
 from .store_files import store_urls
 from .args import argparser
+
 
 args = argparser()
 target_url = args.url

@@ -141,7 +141,8 @@ async def fetch_dir(client, dir):
 
     
 async def filter_urls():
-    print('\nVerifying URLs, please wait')
+    if not (args.stdout):
+        print('\nVerifying URLs, please wait')
     start_time = time.time()
     custom_bar_format = "[[\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] ]]"
     total_dir_counts = len(all_dirs)
