@@ -1,9 +1,25 @@
-import argparse
+import argparse, os
 
-class NewlineFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
-    pass
+# get_py_filename = os.path.basename(__file__)
+get_py_filename = "js-parse.py"
+def argparser():
+    intro_logo = f"""\u001b[31m
 
-def setup_args(get_py_filename, intro_logo):
+    ░░░░░██╗░██████╗░░░░░░██████╗░░█████╗░██████╗░░██████╗███████╗
+    ░░░░░██║██╔════╝░░░░░░██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
+    ░░░░░██║╚█████╗░█████╗██████╔╝███████║██████╔╝╚█████╗░█████╗░░
+    ██╗░░██║░╚═══██╗╚════╝██╔═══╝░██╔══██║██╔══██╗░╚═══██╗██╔══╝░░
+    ╚█████╔╝██████╔╝░░░░░░██║░░░░░██║░░██║██║░░██║██████╔╝███████╗
+    ░╚════╝░╚═════╝░░░░░░░╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═════╝░╚══════╝
+        
+
+
+
+
+    --------------------------------------------------------------\u001b[0m"""
+    class NewlineFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
+        pass
+
     parser = argparse.ArgumentParser(prog= f"python {get_py_filename}", description='\u001b[96mdescription: parses urls from js files', epilog=
     f'''
     \u001b[91mbasic usage:\u001b[0m python {get_py_filename } https://youtube.com
@@ -16,10 +32,14 @@ def setup_args(get_py_filename, intro_logo):
     parser.add_argument("--save", help="save prettified js files", action="store_true")
     parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
     parser.add_argument("-f", "--filter", help="removes false positives with http probing/request methods (use at your own risk). 4xx does not include 404 and 405", choices=['all', '1xx', '2xx', '3xx', '4xx', '5xx', 'forbidden'])
-    parser.add_argument("-r", "--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
+    parser.add_argument("--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
     parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
+    parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec (without specifying) which would be actually 24)", type=int, default=12)
+    parser.add_argument("--scope", help="specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com", nargs="*")
 
     file_group = parser.add_mutually_exclusive_group()
     file_group.add_argument("-m", "--merge", help="create file and merge all urls into it", action="store_true")
     file_group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
-    return parser
+
+    args = parser.parse_args()
+    return args

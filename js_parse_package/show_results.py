@@ -1,37 +1,40 @@
-from utils import remove_dupes, clean_urls
-def stdout_dirs(all_dirs, remove_third_parties, filter, stdout):
+import asyncio, os
+from .utils import(
+    remove_dupes,
+    clean_urls
+)
+from .http_probe import filter_urls
+from .args import argparser
+from .shared import( 
+    all_dirs,
+    pretty_files,
+    target
+    )
+args = argparser()
+
+
+def stdout_dirs():
     remove_dupes(all_dirs)
     if (args.remove_third_parties):
         if (args.filter and args.stdout):
-            filter_urls_without_tqdm()
+            asyncio.run(filter_urls())
         elif (args.filter):
-            filter_urls_with_tqdm()
+            asyncio.run(filter_urls())
         else:
-            print("must have -f (filter) option with -r (remove third parties)")
+            print("must have -f (filter) option with --remove-third-parties")
             quit()
     elif (args.filter and args.stdout):
-            filter_urls_without_tqdm()
+        asyncio.run(filter_urls())
     elif (args.filter):
-        filter_urls_with_tqdm()
+        asyncio.run(filter_urls())
     for dir in all_dirs:
         print(clean_urls(dir))
 
-def write_files(all_dirs, remove_third_parties, filter, stdout):
-    remove_dupes(all_dirs)
-    if (args.remove_third_parties):
-        if (args.filter and args.stdout):
-            filter_urls_without_tqdm()
-        elif (args.filter):
-            filter_urls_with_tqdm()
-        else:
-            print("must have -f (filter) option with -r (remove third parties)")
-            quit()
-    elif (args.filter and args.stdout):
-            filter_urls_without_tqdm()
-    elif (args.filter):
-        filter_urls_with_tqdm()
-    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "w", encoding="utf-8") as directories:
-        directories.write('')
-    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "a", encoding="utf-8") as directories:
-        for unique_dir in all_dirs:
-            directories.write(clean_urls(unique_dir) + '\n')
+def move_stored_files():
+    for prettyfile in range(1, len(pretty_files) + 1):
+        source_path = os.getcwd()
+        source_filename = f"pretty-file{prettyfile}.txt"
+        source_file = os.path.join(source_path, source_filename)
+        destination_dir = os.path.join(source_path, f"""{target["domain"]}/parsed-files""")
+        destination_file = os.path.join(destination_dir, source_filename)
+        os.replace(source_file, destination_file)
