@@ -47,7 +47,10 @@ def store_urls(url):
                         directories.write(dir + ',\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
-                all_dirs.append(dir)
+                if i == num_urls:
+                    all_dirs.append(dir)  # No comma for the last directory
+                else:
+                    all_dirs.append(dir + ',')
             else:
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
