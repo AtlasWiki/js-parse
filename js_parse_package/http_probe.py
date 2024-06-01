@@ -190,7 +190,6 @@ async def filter_urls():
                     await task
 
                 tasks = []  # Clear the tasks list for the next batch
-    print(to_remove)
     for dirs in to_remove:
         all_dirs.remove(dirs)
     
