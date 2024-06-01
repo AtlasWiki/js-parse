@@ -37,7 +37,7 @@ def store_urls(url):
             if (args.isolate):
                 dir = quoted_dir.strip('"')
                 with open(f"""{target["domain"]}/parsed-urls/{file_name}+dirs.txt""", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
+                    directories.write(dir + ',\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
@@ -69,3 +69,4 @@ def write_files():
     with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "a", encoding="utf-8") as directories:
         for unique_dir in all_dirs:
             directories.write(clean_urls(unique_dir) + '\n')
+
