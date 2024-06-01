@@ -1,0 +1,1 @@
+https://api.wepwn.ma/auth/verify

@@ -134,7 +134,7 @@ async def fetch_dir(client, dir):
 
             if dir[0] != "/" or dir[0] == "/":
                 to_remove.append(dir)
-    
+
     except Exception as e:
         # tqdm.write(f"Error processing {dir}: {e}") # for error checking
         to_remove.append(dir)
@@ -190,7 +190,7 @@ async def filter_urls():
                     await task
 
                 tasks = []  # Clear the tasks list for the next batch
-
+    print(to_remove)
     for dirs in to_remove:
         all_dirs.remove(dirs)
     
