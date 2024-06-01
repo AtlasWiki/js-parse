@@ -27,11 +27,6 @@ install the dependencies
 ```
 pip install -r requirements.txt
 ```
-if running on linux do:
-```
-chmod +x js-parse.py
-sudo mv js-parse.py /usr/local/bin/js-parse
-```
 
 run the file:
 + python:
@@ -43,11 +38,7 @@ or
 ```
 ./js-parse https://youtube.com
 ```
-or
-+ linux global/binary:
-```
-js-parse https://youtube.com
-```
+
 
 ## Options:
 ```
