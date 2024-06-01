@@ -31,16 +31,26 @@ def store_urls(url):
         pass
     except AttributeError:
         pass
-   
-    for quoted_dir in extract_urls(url):
+
+    extracted_urls = extract_urls(url)
+    num_urls = len(extracted_urls)
+    i = 0
+    for quoted_dir in extracted_urls:
+        i += 1
         try:
             if (args.isolate):
                 dir = quoted_dir.strip('"')
                 with open(f"""{target["domain"]}/parsed-urls/{file_name}+dirs.txt""", "a", encoding="utf-8") as directories:
-                    directories.write(dir + '\n')
+                    if i == num_urls:
+                        directories.write(dir + '\n')  # No comma for the last directory
+                    else:
+                        directories.write(dir + ',\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
-                all_dirs.append(dir)
+                if i == num_urls:
+                    all_dirs.append(dir)  # No comma for the last directory
+                else:
+                    all_dirs.append(dir + ',')
             else:
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
@@ -49,7 +59,6 @@ def store_urls(url):
                 parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
                 if not (os.path.exists(parsed_files_directory_path)):
                     os.makedirs(parsed_files_directory_path)
-
 def write_files():
     remove_dupes(all_dirs)
     if (args.remove_third_parties):
@@ -69,3 +78,4 @@ def write_files():
     with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "a", encoding="utf-8") as directories:
         for unique_dir in all_dirs:
             directories.write(clean_urls(unique_dir) + '\n')
+
