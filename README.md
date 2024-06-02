@@ -13,8 +13,9 @@
 + **File Management:** allows an organized structure of storing the files and urls.
 + **File Association:** parses the name of the js files and writes the associated urls to them.
 + **URL Filter/Check:** verifies legit urls and removes false positives.
-+ **Disable Third Party URL Probing:** disables http requests send to third party urls.
++ **Disable Third Party URL Probing:** disables http requests sent to third party urls.
 + **Fast HTTP Probing**: uses concurrent requests and allow you to optionally set the requests per sec.
++ **HTTP Probing Report Summary**: saves a json report summary of response status codes and header information of the urls.
 <br>
 
 ## Installation:
@@ -51,7 +52,10 @@ or
                       does not probe third-party urls with request methods (default: False)
 -n, --no-logo         hides logo (default: False)
 -r REQUESTS, --requests REQUESTS
-                      the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec which would be actually 24) (default: 12)
+                      the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec (without specifying)      
+                      which would be actually 24) (default: 12)
+--scope [SCOPE ...]   specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com (default: None)
+-j, --json-report     json report/summary of all urls (default: False)
 -m, --merge           create file and merge all urls into it (default: False)
 -i, --isolate         create multiple files and store urls where they were parsed from (default: False)
 ```
@@ -91,8 +95,18 @@ std-out:
 python js-parse.py https://youtube.com -S
 ```
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/24408419-15b3-43e3-bcc6-755c622c0b0c">
+
+<br>
+
+full summary report:
+```
+python js-parse.py https://www.youtube.com -j -m -f all --remove-third-parties
+```
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/js-parse/assets/87085506/aaf14e73-5bbd-4595-8631-53e31fe555f9">
+
 <br>
 <br>
+
 
 ### Warranty
 The creator(s) of this tool provides no warranty or assurance regarding its performance, dependability, or suitability for any specific purpose.
