@@ -1,3 +1,5 @@
+from .shared import dict_report
+
 def clean_urls(url):
     if(url[:4] == "http"):    
         return url
@@ -15,3 +17,7 @@ def parse_domain(http_url):
 
 def remove_dupes(all_dirs):
     all_dirs[:] = list(dict.fromkeys(all_dirs))
+
+def create_report(url, request, status_code):
+    dict_report[url]['requests'][request] = status_code
+    # dict_report[url][request] = status_code
