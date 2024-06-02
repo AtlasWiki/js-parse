@@ -37,6 +37,12 @@ def store_urls(url):
     i = 0
     for quoted_dir in extracted_urls:
         i += 1
+
+    extracted_urls = extract_urls(url)
+    num_urls = len(extracted_urls)
+    i = 0
+    for quoted_dir in extracted_urls:
+        i += 1
         try:
             if (args.isolate):
                 dir = quoted_dir.strip('"')
@@ -45,9 +51,16 @@ def store_urls(url):
                         directories.write(dir + '\n')  # No comma for the last directory
                     else:
                         directories.write(dir + ',\n')
+                    if i == num_urls:
+                        directories.write(dir + '\n')  # No comma for the last directory
+                    else:
+                        directories.write(dir + ',\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
-                all_dirs.append(dir)
+                if i == num_urls:
+                    all_dirs.append(dir)  # No comma for the last directory
+                else:
+                    all_dirs.append(dir + ',')
             else:
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
