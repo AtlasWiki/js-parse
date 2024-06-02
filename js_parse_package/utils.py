@@ -1,5 +1,5 @@
 from .shared import dict_report
-
+from .statuses import http_status_codes
 def clean_urls(url):
     if(url[:4] == "http"):    
         return url
@@ -19,7 +19,8 @@ def remove_dupes(all_dirs):
     all_dirs[:] = list(dict.fromkeys(all_dirs))
 
 def create_report(url, request, status_code, **headers):
-    dict_report[url]['requests'][request] = status_code
+    dict_report[url]['requests'][request]['code'] = status_code
+    dict_report[url]['requests'][request]['message'] = http_status_codes.get(status_code, False)
     http_dict = headers["headers"]
     http_keys = []
     http_values = []

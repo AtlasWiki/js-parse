@@ -37,11 +37,14 @@ def format_dir(dir):
 
 async def fetch_dir(client, dir):
     try:
-        # initalize dictionary for storing urls and status codes
+        # initalize parent keys for the dictionary
         dict_report[dir] = {}
         dict_report[dir]['requests'] = {}
+        dict_report[dir]['requests']["GET"] = {}
+        dict_report[dir]['requests']["POST"] = {}
+        dict_report[dir]['requests']["HEAD"] = {}
+        dict_report[dir]['requests']["OPTIONS"] = {}
         dict_report[dir]['headers'] = {}
-        # dict_report[dir]['file_type'] = {}
         # get/post requests
         get_response, post_response = await client.get(format_dir(dir)), await client.post(format_dir(dir))
         get_status, post_status = str(get_response.status_code), str(post_response.status_code)
