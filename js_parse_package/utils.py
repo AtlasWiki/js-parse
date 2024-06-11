@@ -1,12 +1,18 @@
-from .shared import dict_report
+from .shared import dict_report, target
 from .statuses import http_status_codes
+from .args import argparser
+
+args = argparser()
+target_url = args.url
+
 def clean_urls(url):
     if(url[:4] == "http"):    
         return url
     if (url[0] != "/"):
-        url = "/" + url
+        url = target_url + "/" + url
         return url
     else:
+        url = target_url + url
         return url
   
 def parse_domain(http_url):
