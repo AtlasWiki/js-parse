@@ -17,6 +17,7 @@ from .shared import all_dirs, dict_report
 
 args = argparser()
 to_remove = []
+to_add = []
 
 async def format_dir(dir):
     if (dir == "https://api.wepwn.ma/contact"): 
@@ -182,17 +183,25 @@ async def fetch_dir(client, dir):
                 tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
             elif (args.stdout and args.json_report):
                 create_report(dir, 'POST', post_status, headers = post_response.headers)
-               
+        
+        elif (verified_three_codes_get or verified_three_codes_post): 
+            get_3xx_response = await client.get((formatted_dir), follow_redirects=True)
+            colored_3xx_response = str(colored_status_codes.get(str(get_3xx_response.status_code)[0]))
+            get_3xx_response_verified = allowed_status_codes.get(f'{get_3xx_response.status_code}', False)
+            if (get_3xx_response_verified):
+                to_add.append(dir)
+            else:
+                to_remove.append(dir)
+            tqdm.write(f'{get_and_post_full_error_message} \033[95m[Redirect]\033[0m {get_3xx_response.url} {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
+    
         else:
             if (args.filter == "all"):
                 if not (args.stdout):
                     tqdm.write(f'{get_and_post_full_error_message} {dir}')
-    
+              
                 create_report(dir, 'GET', get_status, headers = get_response.headers)
                 create_report(dir, 'POST', post_status)
-            # if (verified_three_codes_post):
-            #    get_3xx_response, post_3xx_response = await client.get(format_dir(dir), follow_redirects=True), await client.post(format_dir(dir))
-            #    print(f' redirect: {get_3xx_response.history} and {post_3xx_response.history}')
+
             if dir[0] != "/" or dir[0] == "/":
                 to_remove.append(dir)
 
@@ -253,4 +262,6 @@ async def filter_urls():
                 tasks = []  # Clear the tasks list for the next batch
     for dirs in to_remove:
         all_dirs.remove(dirs)
+    for dirs in to_add:
+        all_dirs.append(dirs)
     
