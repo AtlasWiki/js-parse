@@ -18,9 +18,10 @@ def parse_domain(http_url):
 def remove_dupes(all_dirs):
     all_dirs[:] = list(dict.fromkeys(all_dirs))
 
-def create_report(url, request, status_code, **headers):
+def create_report(url, request, status_code, final_location, **headers):
     dict_report[url]['requests'][request]['code'] = status_code
     dict_report[url]['requests'][request]['message'] = http_status_codes.get(status_code, False)
+    dict_report[url]['final_location'] = str(final_location)
     http_dict = headers["headers"]
     http_keys = []
     http_values = []
