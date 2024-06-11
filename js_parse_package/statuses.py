@@ -13,15 +13,6 @@ allowed_status_codes = {
     '207': 'Multi-Status',
     '208': 'Already Reported',
     '226': 'IM Used',
-    '300': 'Multiple Choices',
-    '301': 'Moved Permanently',
-    '302': 'Found',
-    '303': 'See Other',
-    '304': 'Not Modified',
-    '305': 'Use Proxy',
-    '306': 'Switch Proxy',
-    '307': 'Temporary Redirect',
-    '308': 'Permanent Redirect',
     '401': 'Unauthorized',
     '402': 'Payment Required',
     '403': 'Forbidden',
@@ -63,8 +54,17 @@ allowed_status_codes = {
 
 blocked_status_codes = {
     '404': '\033[31m', # red
-    '405': '\033[31m', # red
-    '400': '\033[31m'  # red
+    '405': '\033[31m', 
+    '400': '\033[31m',  
+    '300': '\033[33m', # sandy brown
+    '301': '\033[33m',
+    '302': '\033[33m',
+    '303': '\033[33m',
+    '304': '\033[33m',
+    '305': '\033[33m',
+    '306': '\033[33m',
+    '307': '\033[33m',
+    '308': '\033[33m',
 }
 
 colored_status_codes = {

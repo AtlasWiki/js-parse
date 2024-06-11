@@ -9,7 +9,7 @@ from .statuses import(
     five_x_x_codes, 
     forbidden_x_x_codes
 )
-import httpx, time, asyncio, json
+import httpx, time, asyncio
 from tqdm import tqdm
 from .utils import parse_domain, create_report
 from .args import argparser
@@ -18,7 +18,7 @@ from .shared import all_dirs, dict_report
 args = argparser()
 to_remove = []
 
-def format_dir(dir):
+async def format_dir(dir):
     if (dir == "https://api.wepwn.ma/contact"): 
         pass   
     else:
@@ -46,7 +46,8 @@ async def fetch_dir(client, dir):
         dict_report[dir]['requests']["OPTIONS"] = {}
         dict_report[dir]['headers'] = {}
         # get/post requests
-        get_response, post_response = await client.get(format_dir(dir)), await client.post(format_dir(dir))
+        formatted_dir = await format_dir(dir)
+        get_response, post_response = await client.get(formatted_dir), await client.post(formatted_dir)
         get_status, post_status = str(get_response.status_code), str(post_response.status_code)
         get_file_type, post_file_type = '', ''
 
@@ -102,7 +103,7 @@ async def fetch_dir(client, dir):
             get_status_verified = verified_forbidden_code_get
 
         if (get_status_verified and post_status_verified):
-            head_response, options_response = await client.head(format_dir(dir)), await client.options(format_dir(dir))
+            head_response, options_response = await client.head(formatted_dir), await client.options(formatted_dir)
             head_status, options_status =  str(head_response.status_code),str(options_response.status_code)
             head_status_verified, options_status_verified = allowed_status_codes.get(f'{head_status}', False), allowed_status_codes.get(f'{options_status}', False)
             if not (args.stdout):
@@ -189,7 +190,9 @@ async def fetch_dir(client, dir):
     
                 create_report(dir, 'GET', get_status, headers = get_response.headers)
                 create_report(dir, 'POST', post_status)
-
+            # if (verified_three_codes_post):
+            #    get_3xx_response, post_3xx_response = await client.get(format_dir(dir), follow_redirects=True), await client.post(format_dir(dir))
+            #    print(f' redirect: {get_3xx_response.history} and {post_3xx_response.history}')
             if dir[0] != "/" or dir[0] == "/":
                 to_remove.append(dir)
 
@@ -208,7 +211,7 @@ async def filter_urls():
     tasks = []
     batch_size = args.requests
     if not (args.stdout):
-        async with httpx.AsyncClient(follow_redirects=True, headers=headers) as client:
+        async with httpx.AsyncClient(follow_redirects=False, headers=headers) as client:
             with tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False) as pbar:
                 for dir_count in range(0, total_dir_counts, batch_size):
                     # Calculate the end index for the current batch
@@ -234,7 +237,7 @@ async def filter_urls():
 
         
     else:
-        async with httpx.AsyncClient(follow_redirects=True, headers=headers) as client:
+        async with httpx.AsyncClient(follow_redirects=False, headers=headers) as client:
             for dir_count in range(0, total_dir_counts, batch_size):
                 # Calculate the end index for the current batch
                 end_index = min(dir_count + batch_size, total_dir_counts)
