@@ -13,7 +13,7 @@ import httpx, time, asyncio
 from tqdm import tqdm
 from .utils import parse_domain, create_report
 from .args import argparser
-from .shared import all_dirs, dict_report
+from .shared import all_dirs, dict_report, formatted_urls
 
 args = argparser()
 to_remove = []
@@ -130,6 +130,7 @@ async def fetch_dir(client, dir):
                     create_report(dir, 'POST', post_status, post_location)
                     create_report(dir, 'HEAD', head_status, head_location)
                     create_report(dir, 'OPTIONS', options_status, options_location)
+                
 
             elif (head_status_verified):
                 if (not args.stdout and args.json_report):
@@ -143,6 +144,7 @@ async def fetch_dir(client, dir):
                     create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                     create_report(dir, 'POST', post_status, post_location)
                     create_report(dir, 'HEAD', head_status, head_location)
+                
                     
             elif (options_status_verified):
                 if (not args.stdout and args.json_report):
@@ -156,6 +158,7 @@ async def fetch_dir(client, dir):
                     create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                     create_report(dir, 'POST', post_status, post_location)
                     create_report(dir, 'HEAD', head_status, head_location)
+                
     
             else:
                 if (not args.stdout and args.json_report):
@@ -167,6 +170,7 @@ async def fetch_dir(client, dir):
                 elif (args.stdout and args.json_report):
                     create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                     create_report(dir, 'POST', post_status, post_location, post_file_type)
+                
 
         elif(get_status_verified):
             if (not args.stdout and args.json_report):
@@ -176,6 +180,7 @@ async def fetch_dir(client, dir):
                 tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
             elif (args.stdout and args.json_report):
                 create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+            
 
         elif(post_status_verified):
             if (not args.stdout and args.json_report):
@@ -185,6 +190,7 @@ async def fetch_dir(client, dir):
                 tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
             elif (args.stdout and args.json_report):
                 create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
+
         
         elif (verified_three_codes_get or verified_three_codes_post): 
             get_3xx_response = await client.get((formatted_dir), follow_redirects=True)
@@ -193,7 +199,7 @@ async def fetch_dir(client, dir):
             create_report(dir, 'GET', get_status, get_3xx_response.url, headers = post_response.headers)
             # create_report(dir, 'POST', get_status, get_location, headers = post_response.headers)
             if (get_3xx_response_verified):
-                to_add.append(dir)
+                to_add.append(formatted_dir)
             else:
                 to_remove.append(dir)
             tqdm.write(f'{get_and_post_full_error_message} \033[95m[Redirect]\033[0m {get_3xx_response.url} {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
