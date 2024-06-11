@@ -86,17 +86,16 @@ def write_files():
             asyncio.run(filter_urls())
     elif (args.filter):
         asyncio.run(filter_urls())
-    if not (args.json_report):
-        with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "w", encoding="utf-8") as directories:
-            directories.write('')
-        with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "a", encoding="utf-8") as directories:
-            print()
-            for unique_dir in all_dirs:
-                i += 1
-                if (i == len(all_dirs)):
-                    directories.write(clean_urls(unique_dir) + '\n')
-                else:
-                    directories.write(clean_urls(unique_dir) + ',\n')
+    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "w", encoding="utf-8") as directories:
+        directories.write('')
+    with open(f"""{target["domain"]}/parsed-urls/all_urls.txt""", "a", encoding="utf-8") as directories:
+        print()
+        for unique_dir in all_dirs:
+            i += 1
+            if (i == len(all_dirs)):
+                directories.write(clean_urls(unique_dir) + '\n')
+            else:
+                directories.write(clean_urls(unique_dir) + ',\n')
     if (args.json_report):
         json_report = json.dumps(dict_report)
         beautified_json_report = jsbeautifier.beautify(str(json_report))
