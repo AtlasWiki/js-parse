@@ -11,7 +11,6 @@ def clean_urls(url):
     if(url[:4] == "http"):    
         return url
     elif (url[0] != "/"):
-        print(url)
         url = target_url + "/" + url
         return url
     else:
