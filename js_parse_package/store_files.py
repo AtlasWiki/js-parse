@@ -9,14 +9,15 @@ from .http_probe import filter_urls
 from .shared import(
     all_dirs,
     target,
-    dict_report
+    dict_report,
+    url_locations
     )
 args = argparser()
 
 
-def store_urls(url):
+def store_urls(file_url):
     try:
-        target["domain"], file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", url).group(0), re.search("([^/]*\.js)", url).group(0)
+        target["domain"], file_name = re.search("(?:[a-zA-Z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9-])?\.)+[a-zA-Z]{2,}", file_url).group(0), re.search("([^/]*\.js)", file_url).group(0)
         parsed_js_directory_path = f"""{target["domain"]}/parsed-urls/"""
         parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
 
@@ -33,13 +34,13 @@ def store_urls(url):
     except AttributeError:
         pass
 
-    extracted_urls = extract_urls(url)
+    extracted_urls = extract_urls(file_url)
     num_urls = len(extracted_urls)
     i = 0
     for quoted_dir in extracted_urls:
         i += 1
 
-    extracted_urls = extract_urls(url)
+    extracted_urls = extract_urls(file_url)
     num_urls = len(extracted_urls)
     i = 0
     for quoted_dir in extracted_urls:
@@ -62,11 +63,14 @@ def store_urls(url):
             else:
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
+                url_locations[dir] = file_name
         finally:
              if(args.save):
                 parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
                 if not (os.path.exists(parsed_files_directory_path)):
                     os.makedirs(parsed_files_directory_path)
+    
+    return num_urls
 def write_files():
     i = 0
     remove_dupes(all_dirs)

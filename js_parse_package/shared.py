@@ -3,3 +3,4 @@ pretty_files = []
 target= {}
 dict_report = {}
 formatted_urls = []
+url_locations = {}
