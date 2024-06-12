@@ -4,16 +4,19 @@ from .args import argparser
 
 args = argparser()
 target_url = args.url
+if (target_url[len(target_url) - 1] == '/'):
+    target_url = target_url[:len(target_url)-1]
 
 def clean_urls(url):
     if(url[:4] == "http"):    
         return url
-    if (url[0] != "/"):
+    elif (url[0] != "/"):
+        print(url)
         url = target_url + "/" + url
         return url
     else:
         url = target_url + url
-        return url
+    return url
   
 def parse_domain(http_url):
     url_pieces = http_url.split("/", 3)
