@@ -1,5 +1,5 @@
 from tqdm import tqdm
-import time, asyncio
+import time
 from .fetch_and_extract_files import extract_files
 from .utils import parse_domain
 from .store_files import store_urls
@@ -18,13 +18,11 @@ def process_files_with_tqdm():
         for js_file in extract_files(target_url):
             if 'http' in js_file or 'https' in js_file:
                 if (parse_domain(target_url) == parse_domain(js_file)):
-                    store_urls(js_file)
-                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(js_file)} URLS]\033[0m")
                 else:
                     try:
                         True if [True if parse_domain(js_file) in scope else False for scope in scope_list].index(True) else False
-                        store_urls(js_file)
-                        tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
+                        tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(js_file)} URLS]\033[0m")
                     except:
                         tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
                         
@@ -32,11 +30,10 @@ def process_files_with_tqdm():
                 # handles both relative files and relative urls
                 if (js_file[0] != "/"): 
                     js_file = "/" + js_file
-                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
-                    store_urls(target_url + js_file)
+                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(target_url + js_file)} URLS]\033[0m")
                 else:
-                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file)
-                    store_urls(target_url + js_file)
+                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(target_url + js_file)} URLS]\033[0m")
+                    
             pbar.update(1)
             
     print("")

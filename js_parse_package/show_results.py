@@ -8,7 +8,8 @@ from .args import argparser
 from .shared import( 
     all_dirs,
     pretty_files,
-    target
+    target,
+    url_locations
     )
 args = argparser()
 
@@ -27,8 +28,15 @@ def stdout_dirs():
         asyncio.run(filter_urls())
     elif (args.filter):
         asyncio.run(filter_urls())
+    if not args.stdout:
+        print("\n\n \033[34m[Extracted From]\033[0m")
+        for x,y in url_locations.items():
+            print(f"\033[32m[{y}]\033[0m", x)
+        print("\n \033[31m[URLS]\033[0m")
     for dir in all_dirs:
         print(clean_urls(dir))
+    
+    
 
 def move_stored_files():
     for prettyfile in range(1, len(pretty_files) + 1):
