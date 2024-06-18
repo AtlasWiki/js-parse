@@ -10,31 +10,33 @@ args = argparser()
 target_url = args.url
 
 def process_files_with_tqdm():
-    custom_bar_format = "[[\033[94m  {desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}]  ]]"
+    custom_bar_format = "[[\033[94m  {desc}\033[0m: [{n}/{total} {percentage:.0f}% {bar}] \033[31mCurrent:\033[0m [{elapsed}] \033[31mRemaining:\033[0m [{remaining}]  ]]"
     total_items = len(list(extract_files(target_url)))
+    pbar = tqdm(range(total_items), bar_format=custom_bar_format, desc="Extracting", unit='File', position=4, ncols=80, leave=False)
+
     start_time = time.time()
     scope_list = args.scope
-    with tqdm(desc="Extracting", unit='URL', bar_format=custom_bar_format, total=total_items, position=4, dynamic_ncols=True, leave=False) as pbar:
-        for js_file in extract_files(target_url):
-            if 'http' in js_file or 'https' in js_file:
-                if (parse_domain(target_url) == parse_domain(js_file)):
-                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(js_file)} URLS]\033[0m")
-                else:
-                    try:
-                        True if [True if parse_domain(js_file) in scope else False for scope in scope_list].index(True) else False
-                        tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(js_file)} URLS]\033[0m")
-                    except:
-                        tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
-                        
+    # with tqdm(desc="Extracting", unit='URL', total=total_items, position=4, dynamic_ncols=20, leave=True) as pbar:
+    for js_file in extract_files(target_url):
+        if 'http' in js_file or 'https' in js_file:
+            if (parse_domain(target_url) == parse_domain(js_file)):
+                tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(js_file)} URLS]\033[0m")
             else:
-                # handles both relative files and relative urls
-                if (js_file[0] != "/"): 
-                    js_file = "/" + js_file
-                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(target_url + js_file)} URLS]\033[0m")
-                else:
-                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(target_url + js_file)} URLS]\033[0m")
+                try:
+                    True if [True if parse_domain(js_file) in scope else False for scope in scope_list].index(True) else False
+                    tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(js_file)} URLS]\033[0m")
+                except:
+                    tqdm.write("\033[33m[Skipped]\033[0m " + js_file)
                     
-            pbar.update(1)
+        else:
+            # handles both relative files and relative urls
+            if (js_file[0] != "/"): 
+                js_file = "/" + js_file
+                tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(target_url + js_file)} URLS]\033[0m")
+            else:
+                tqdm.write("\033[32m[Extracted]\033[0m " + js_file + f" \033[31m[{store_urls(target_url + js_file)} URLS]\033[0m")
+                
+        pbar.update(1)
             
     print("")
     end_time = time.time()

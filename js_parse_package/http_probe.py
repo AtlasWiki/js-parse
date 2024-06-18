@@ -265,14 +265,17 @@ async def filter_urls():
     if not (args.stdout):
         print('\nVerifying URLs, please wait')
     start_time = time.time()
-    custom_bar_format = "[[\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}%] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] ]]"
+    custom_bar_format = "[[\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}% {bar}] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] ]]"
     total_dir_counts = len(all_dirs)
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
     tasks = []
     batch_size = args.requests
     if not (args.stdout):
+        
+        pbar = tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, ncols=80, leave=False)
+
         async with httpx.AsyncClient(follow_redirects=False, headers=headers) as client:
-            with tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False) as pbar:
+            # with tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False) as pbar:
                 for dir_count in range(0, total_dir_counts, batch_size):
                     # Calculate the end index for the current batch
                     end_index = min(dir_count + batch_size, total_dir_counts)
