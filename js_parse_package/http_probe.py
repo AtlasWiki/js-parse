@@ -295,8 +295,8 @@ async def filter_urls():
         end_time = time.time()
         elapsed_time = end_time - start_time
 
-        print("")
-        print("  \033[94m" + f"[PROBED]\033[0m {total_dir_counts} urls in {elapsed_time:.2f} seconds\n")
+        tqdm.write("  \n\033[94m" + f"[PROBED]\033[0m {total_dir_counts} urls in {elapsed_time:.2f} seconds\n")
+        tqdm.write("")
 
         
     else:
