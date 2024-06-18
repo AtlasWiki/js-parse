@@ -15,6 +15,7 @@
 + **URL Filter/Check:** verifies legit urls and removes false positives.
 + **Disable Third Party URL Probing:** disables http requests sent to third party urls.
 + **Fast HTTP Probing**: uses concurrent requests and allow you to optionally set the requests per sec.
++ **Filtering modes**: comes with filtering of specific status codes when doing http probing.
 + **HTTP Probing Report Summary**: saves a json report summary of response status codes and header information of the urls.
 <br>
 
