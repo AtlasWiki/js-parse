@@ -46,7 +46,7 @@ def verify_files():
             process_files_with_tqdm()
             print(f'\n\n\n\033[31m[PARSED]\033[0m {len(all_dirs)} urls\n')
     elif (args.json_report):
-            print('cannot use -j/--json-report alone. must pair this up with -m/--merge option')
+            print('cannot use -j/--json-report alone. must pair this up with -o/--merge option')
             quit()
     elif(args.stdout):
         process_files_without_tqdm()

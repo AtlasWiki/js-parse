@@ -12,9 +12,13 @@ from .statuses import(
 )
 import httpx, time, asyncio
 from tqdm import tqdm
-from .utils import parse_domain, create_report
+from .utils import parse_domain
 from .args import argparser
-from .shared import all_dirs, dict_report, formatted_urls
+from .shared import all_dirs
+from js_parse_package.json_report import report_maker
+
+args = argparser()
+report = report_maker()
 
 args = argparser()
 to_remove = []
@@ -39,231 +43,249 @@ async def format_dir(dir):
 
 async def fetch_dir(client, dir):
     try:
-        # initalize parent keys for the dictionary
-        dict_report[dir] = {}
-        dict_report[dir]['requests'] = {}
-        dict_report[dir]['requests']["GET"] = {}
-        dict_report[dir]['requests']["POST"] = {}
-        dict_report[dir]['requests']["HEAD"] = {}
-        dict_report[dir]['requests']["OPTIONS"] = {}
-        dict_report[dir]['headers'] = {}
-        # get/post requests
+        if (args.json_report):
+            report = report_maker()
+            # initalize parent keys for the dictionary
+            report.create_dict(dir)
         formatted_dir = await format_dir(dir)
-        get_response, post_response = await client.get(formatted_dir), await client.post(formatted_dir)
-        get_location, post_location = str(get_response.url), str(post_response.url)
-        get_status, post_status = str(get_response.status_code), str(post_response.status_code)
-        get_file_type, post_file_type = '', ''
-
-        try:
-            get_file_type = get_response.headers.get("Content-Type").split(';')[0]
-        except: 
-            get_file_type = get_response.headers.get("Content-Type")
-        try:
-            post_file_type = post_response.headers.get("Content-Type").split(';')[0]
-        except: 
-            post_file_type = post_response.headers.get("Content-Type")
-            
-
-        # get/post messages
-        if not (args.stdout): 
-            get_status_color, post_status_color= str(colored_status_codes.get(get_status[0])), str(colored_status_codes.get(post_status[0]))
-            get_status_colored_message, post_status_colored_message =  get_status_color + get_status, post_status_color + post_status
-        # get/post conditions
-        get_status_verified, post_status_verified = allowed_status_codes.get(f'{get_status}', False), allowed_status_codes.get(f'{post_status}', False)
-        get_status_blocked = blocked_status_codes.get(f'{get_status}', False)
-        verified_one_codes_post, verified_one_codes_get = one_x_x_codes.get(post_status, False), one_x_x_codes.get(get_status, False)
-        verified_two_codes_post, verified_two_codes_get = two_x_x_codes.get(post_status, False), two_x_x_codes.get(get_status, False)
-        verified_three_codes_post, verified_three_codes_get = three_x_x_codes.get(post_status, False), three_x_x_codes.get(get_status, False)
-        verified_four_codes_post, verified_four_codes_get = four_x_x_codes.get(post_status, False), four_x_x_codes.get(get_status, False)
-        verified_five_codes_post, verified_five_codes_get = five_x_x_codes.get(post_status, False), five_x_x_codes.get(get_status, False)
-        verified_forbidden_code_post, verified_forbidden_code_get =  forbidden_x_x_codes.get(post_status, False), forbidden_x_x_codes.get(get_status, False)
-        # get/post colored statements
-        if not (args.stdout):
-            reset_color = '\033[0m'
-            verified_message_strip = f"\033[33m[Verified]{reset_color} "
-            get_status_full_message = verified_message_strip + f"{get_status_color}[{get_status_colored_message}][GET]{reset_color} "
-            post_status_full_message = verified_message_strip + f"{post_status_color}[{post_status_colored_message}][POST]{reset_color} "
-            get_and_post_full_message = get_status_full_message + post_status_full_message.replace(verified_message_strip, "")
-            get_and_post_full_error_message = verified_message_strip + f"{get_status_blocked}[{get_status}][GET] [{post_status}][POST]{reset_color} "
+        # initalize response objects and other variables
+        get_response, post_response, patch_response, put_response, delete_response, head_response, options_response = "","","","","","",""
+        get_status, post_status, patch_status, put_status, delete_status, head_status, options_status = "","","","","","",""
+        get_file_type, post_file_type, patch_file_type, put_file_type, delete_file_type, head_file_type, options_file_type = '','','','','','',''
+        # colors
+        get_status_color, post_status_color, head_status_color, options_status_color = "","","",""
+        put_status_color, patch_status_color, options_status_color = "","",""
+        # colored text
+        get_status_colored_message, post_status_colored_message, head_status_colored_message, options_status_colored_message = "","","",""
+        put_status_colored_message, patch_status_colored_message, delete_status_colored_message = "","",""
+        # conditions
+        get_status_verified, post_status_verified, head_status_verified, options_status_verified, = "", "", "", ""
+        put_status_verified, patch_status_verified, delete_status_verified = "", "", ""
+        # message strips
+        get_status_message_strip, post_status_message_strip, head_status_colored_message, options_status_colored_message = "","","",""
+        put_status_message_strip, patch_status_message_strip, delete_status_message_strip = "","",""
         
+        # initalize global message objects
+        reset_color = '\033[0m'
+        verified_message_strip = f"\033[33m[Verified]{reset_color} "
+        http_message = verified_message_strip
+
+        # update respones objects and variables
+        if (args.method):
+            for method in args.method:
+
+                if (method.lower() == "get" or method.lower() == "only_safe" or method.lower() == "all"):
+                    get_response = await client.get(formatted_dir)
+                    get_status = str(get_response.status_code)
+                    get_status_color = str(colored_status_codes.get(get_status[0]))
+                    get_status_colored_message =  get_status_color + get_status
+                    get_status_verified = allowed_status_codes.get(f'{get_status}', False)
+                    # get_status_blocked = blocked_status_codes.get(f'{get_status}', False)
+                    try:
+                        get_file_type = get_response.headers.get("Content-Type").split(';')[0]
+                    except: 
+                        get_file_type = get_response.headers.get("Content-Type")
+                    get_status_message_strip = f"{get_status_color}[{get_status_colored_message}][GET]{reset_color} \033[34m[{get_file_type}]\033[0m  "
+
+                if (method.lower() == "post" or method.lower() == "only_safe" or method.lower() == "all"):
+                    post_response = await client.post(formatted_dir)
+                    post_status = str(post_response.status_code)
+                    post_status_color = str(colored_status_codes.get(post_status[0]))
+                    post_status_colored_message = post_status_color + post_status
+                    post_status_verified = allowed_status_codes.get(f'{post_status}', False)
+                    try:
+                        post_file_type = post_response.headers.get("Content-Type").split(';')[0]
+                    except: 
+                        post_file_type = post_response.headers.get("Content-Type")
+                    post_status_message_strip = f"{post_status_color}[{post_status_colored_message}][POST]{reset_color} \033[34m[{post_file_type}] \033[0m  "
+
+                if (method.lower() == "patch" or method.lower() == "only_unsafe" or method.lower() == "all"):
+                    patch_response = await client.patch(formatted_dir)
+                    patch_status = str(patch_response.status_code)
+                    patch_status_color = str(colored_status_codes.get(patch_status[0]))
+                    patch_status_colored_message = patch_status_color + patch_status
+                    patch_status_verified = allowed_status_codes.get(f'{patch_status}', False)
+                    try:
+                        patch_file_type = patch_response.headers.get("Content-Type").split(';')[0]
+                    except: 
+                        patch_file_type = patch_response.headers.get("Content-Type")
+                    patch_status_message_strip = f"{patch_status_color}[{patch_status_colored_message}][PATCH]{reset_color} \033[34m[{patch_file_type}] \033[0m  "
+
+                if (method.lower() == "put" or method.lower() == "only_unsafe" or method.lower() == "all"):
+                    put_response = await client.put(formatted_dir)
+                    put_status = str(put_response.status_code)
+                    put_status_color = str(colored_status_codes.get(put_status[0]))
+                    put_status_colored_message = put_status_color + put_status
+                    put_status_verified = allowed_status_codes.get(f'{put_status}', False)
+                    try:
+                        put_file_type = put_response.headers.get("Content-Type").split(';')[0]
+                    except: 
+                        put_file_type = put_response.headers.get("Content-Type")
+                    put_status_message_strip = f"{put_status_color}[{put_status_colored_message}][PUT]{reset_color} \033[34m[{put_file_type}] \033[0m  "
+
+                if (method.lower() == "delete" or method.lower() == "only_unsafe" or method.lower() == "all"):
+                    delete_response = await client.delete(formatted_dir)
+                    delete_status = str(delete_response.status_code)    
+                    delete_status_color = str(colored_status_codes.get(delete_status[0]))
+                    delete_status_colored_message = delete_status_color + delete_status
+                    delete_status_verified = allowed_status_codes.get(f'{delete_status}', False)
+                    try:
+                        delete_file_type = delete_response.headers.get("Content-Type").split(';')[0]
+                    except: 
+                        delete_file_type = delete_response.headers.get("Content-Type")
+                    delete_status_message_strip = f"{delete_status_color}[{delete_status_colored_message}][DELETE]{reset_color} \033[34m[{delete_file_type}] \033[0m  "
+
+                if (method.lower() == "head" or method.lower() == "only_safe" or method.lower() == "all"):
+                    head_response = await client.head(formatted_dir)
+                    head_status = str(head_response.status_code)
+                    head_status_color = str(colored_status_codes.get(head_status[0]))
+                    head_status_colored_message = head_status_color + head_status
+                    head_status_verified = allowed_status_codes.get(f'{head_status}', False)
+                    try:
+                        head_file_type = head_response.headers.get("Content-Type").split(';')[0]
+                    except: 
+                        head_file_type = head_response.headers.get("Content-Type")
+                    head_status_message_strip = f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} \033[34m[{head_file_type}] \033[0m  "
+
+                if (method.lower() == "options" or method.lower() == "only_safe" or method.lower() == "all"):
+                    options_response = await client.options(formatted_dir)
+                    options_status = str(options_response.status_code)
+                    options_status_color = str(colored_status_codes.get(options_status[0]))
+                    options_status_colored_message = options_status_color + options_status
+                    options_status_verified = allowed_status_codes.get(f'{options_status}', False)
+                    try:
+                        options_file_type = get_response.headers.get("Content-Type").split(';')[0]
+                    except: 
+                        options_file_type = options_response.headers.get("Content-Type")
+                    options_status_message_strip = f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} \033[34m[{options_file_type}] \033[0m  "
+       
+        # set status filter modes
         if (args.filter=='1xx'):
-            get_status_verified = verified_one_codes_get
-            post_status_verified = verified_one_codes_post
+            get_status_verified = one_x_x_codes.get(get_status, False)
+            post_status_verified = one_x_x_codes.get(post_status, False)
+            head_status_verified = one_x_x_codes.get(head_status, False)
+            options_status_verified = one_x_x_codes.get(options_status, False)
+            put_status_verified = one_x_x_codes.get(put_status, False)
+            patch_status_verified = one_x_x_codes.get(patch_status, False)
+            delete_status_verified = one_x_x_codes.get(delete_status, False)
         elif (args.filter=='2xx'):
-            get_status_verified = verified_two_codes_get
-            post_status_verified = verified_two_codes_post
+            get_status_verified = two_x_x_codes.get(get_status, False)
+            post_status_verified = two_x_x_codes.get(post_status, False)
+            head_status_verified = two_x_x_codes.get(head_status, False)
+            options_status_verified = two_x_x_codes.get(options_status, False)
+            put_status_verified = two_x_x_codes.get(put_status, False)
+            patch_status_verified = two_x_x_codes.get(patch_status, False)
+            delete_status_verified = two_x_x_codes.get(delete_status, False)
         elif (args.filter=='3xx'):
-            get_status_verified = verified_three_codes_get
-            post_status_verified = verified_three_codes_post
+            get_status_verified = three_x_x_codes.get(get_status, False)
+            post_status_verified = three_x_x_codes.get(post_status, False)
+            head_status_verified = three_x_x_codes.get(head_status, False)
+            options_status_verified = three_x_x_codes.get(options_status, False)
+            put_status_verified = three_x_x_codes.get(put_status, False)
+            patch_status_verified = three_x_x_codes.get(patch_status, False)
+            delete_status_verified = three_x_x_codes.get(delete_status, False)
         elif (args.filter == '4xx'):
-            get_status_verified = verified_four_codes_get
-            post_status_verified = verified_four_codes_post
+            get_status_verified = four_x_x_codes.get(get_status, False)
+            post_status_verified = four_x_x_codes.get(post_status, False)
+            head_status_verified = four_x_x_codes.get(head_status, False)
+            options_status_verified = four_x_x_codes.get(options_status, False)
+            put_status_verified = four_x_x_codes.get(put_status, False)
+            patch_status_verified = four_x_x_codes.get(patch_status, False)
+            delete_status_verified = four_x_x_codes.get(delete_status, False)
         elif (args.filter == '5xx'):
-            get_status_verified = verified_five_codes_get
-            post_status_verified = verified_five_codes_post
+            get_status_verified = five_x_x_codes.get(get_status, False)
+            post_status_verified = five_x_x_codes.get(post_status, False)
+            head_status_verified = five_x_x_codes.get(head_status, False)
+            options_status_verified = five_x_x_codes.get(options_status, False)
+            put_status_verified = five_x_x_codes.get(put_status, False)
+            patch_status_verified = five_x_x_codes.get(patch_status, False)
+            delete_status_verified = five_x_x_codes.get(delete_status, False)
         elif (args.filter=='forbidden'):
-            post_status_verified = verified_forbidden_code_post
-            get_status_verified = verified_forbidden_code_get
+            get_status_verified = forbidden_x_x_codes.get(get_status, False)
+            post_status_verified = forbidden_x_x_codes.get(post_status, False)
+            head_status_verified = forbidden_x_x_codes.get(head_status, False)
+            options_status_verified = forbidden_x_x_codes.get(options_status, False)
+            put_status_verified = forbidden_x_x_codes.get(put_status, False)
+            patch_status_verified = forbidden_x_x_codes.get(patch_status, False)
+            delete_status_verified = forbidden_x_x_codes.get(delete_status, False)
 
-        if (get_status_verified and post_status_verified):
-            head_response, options_response = await client.head(formatted_dir), await client.options(formatted_dir)
-            head_location, options_location = str(head_response.url), str(options_response.url)
-            head_status, options_status =  str(head_response.status_code),str(options_response.status_code)
-            head_status_verified, options_status_verified = allowed_status_codes.get(f'{head_status}', False), allowed_status_codes.get(f'{options_status}', False)
+     
+        if (get_status_verified):
             if not (args.stdout):
-                head_status_color, options_status_color = str(colored_status_codes.get(head_status[0])), str(colored_status_codes.get(options_status[0]))
-                head_status_colored_message, options_status_colored_message = head_status_color + head_status, options_status_color + options_status
-                head_status_full_message_others = get_and_post_full_message + f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} "
-                options_status_full_message_others = get_and_post_full_message + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
-                options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
+                http_message += get_status_message_strip 
 
-            if (head_status_verified and options_status_verified):
-                if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                    create_report(dir, 'OPTIONS', options_status, options_location)
-                    tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif not (args.stdout):
-                    tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                    create_report(dir, 'OPTIONS', options_status, options_location)
-                
-
-            elif (head_status_verified):
-                if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                    tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif not (args.stdout):
-                    tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                
-                    
-            elif (options_status_verified):
-                if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                    tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif not (args.stdout):
-                    tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                
-    
-            else:
-                if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location, post_file_type)
-                    tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif not (args.stdout):
-                    tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location, post_file_type)
-                
-
-        elif(get_status_verified):
-            if (not args.stdout and args.json_report):
-                create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-            elif not (args.stdout):
-                tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-            elif (args.stdout and args.json_report):
-                create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-            
-
-        elif(post_status_verified):
-            if (not args.stdout and args.json_report):
-                create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
-                tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
-            elif not (args.stdout):
-                tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
-            elif (args.stdout and args.json_report):
-                create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
-
+        if (post_status_verified):
+            if not (args.stdout):
+                http_message += post_status_message_strip 
         
-        elif (verified_three_codes_get or verified_three_codes_post): 
-            get_3xx_response = await client.get((formatted_dir), follow_redirects=True)
-            post_3xx_response = await client.post((formatted_dir), follow_redirects=True)
-            colored_3xx_response = str(colored_status_codes.get(str(get_3xx_response.status_code)[0]))
-            get_3xx_response_verified = allowed_status_codes.get(f'{get_3xx_response.status_code}', False)
-            post_3xx_response_verified = allowed_status_codes.get(f'{post_3xx_response.status_code}')
-            create_report(dir, 'GET', get_status, get_3xx_response.url, headers = post_response.headers)
-            # create_report(dir, 'POST', get_status, get_location, headers = post_response.headers)
-            if (args.filter =='1xx'):
-                get_3xx_response_verified = one_x_x_codes.get(f'{get_3xx_response.status_code}', False)
-                post_3xx_response_verified = one_x_x_codes.get(f'{post_3xx_response.status_code}', False)
-            elif (args.filter =='2xx'):
-                get_3xx_response_verified = two_x_x_codes.get(f'{get_3xx_response.status_code}', False)
-                post_3xx_response_verified = two_x_x_codes.get(f'{post_3xx_response.status_code}', False)
-            elif (args.filter =='3xx'):
-                get_3xx_response_verified = three_x_x_codes.get(f'{get_3xx_response.status_code}', False)
-                post_3xx_response_verified = three_x_x_codes.get(f'{post_3xx_response.status_code}', False)
-            elif (args.filter == '4xx'):
-                get_3xx_response_verified = four_x_x_codes.get(f'{get_3xx_response.status_code}', False)
-                post_3xx_response_verified = four_x_x_codes.get(f'{post_3xx_response.status_code}', False)
-            elif (args.filter == '5xx'):
-                get_3xx_response_verified = five_x_x_codes.get(f'{get_3xx_response.status_code}', False)
-                post_3xx_response_verified = five_x_x_codes.get(f'{post_3xx_response.status_code}', False)
-            elif (args.filter =='forbidden'):
-                get_3xx_response_verified = forbidden_x_x_codes.get(f'{get_3xx_response.status_code}', False)
-                post_3xx_response_verified = forbidden_x_x_codes.get(f'{post_3xx_response.status_code}', False)
+        if (head_status_verified):
+            if not (args.stdout):
+                http_message += head_status_message_strip 
+
+        if (options_status_verified):
+            if not (args.stdout):
+                http_message += options_status_message_strip 
+        
+        if (put_status_verified):
+            if not (args.stdout):
+                http_message += put_status_message_strip 
+        
+        if (patch_status_verified):
+            if not (args.stdout):
+                http_message += patch_status_message_strip 
+        
+        if (delete_status_verified):
+            if not (args.stdout):
+                http_message += delete_status_message_strip 
             
-            if (get_3xx_response_verified or post_3xx_response_verified):
-                to_add.append(formatted_dir)
-            
-                head_response, options_response = await client.head(formatted_dir), await client.options(formatted_dir)
-                head_location, options_location = str(head_response.url), str(options_response.url)
-                head_status, options_status =  str(head_response.status_code),str(options_response.status_code)
-                head_status_verified, options_status_verified = http_status_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
-                head_status_color, options_status_color = str(colored_status_codes.get(head_status[0])), str(colored_status_codes.get(options_status[0]))
-                head_status_colored_message, options_status_colored_message = head_status_color + head_status, options_status_color + options_status
-                head_status_full_message_others = get_and_post_full_message + f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} "
-                options_status_full_message_others = get_and_post_full_message + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
-                options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
-                
-                if (head_status_verified and options_status_verified):
-                    tqdm.write(f'{options_head_status_full_message_others} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
-                elif(head_status_verified):
-                    tqdm.write(f'{head_status_full_message_others} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
-                elif(options_status_verified):
-                    tqdm.write(f'{options_status_full_message_others} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
-                elif(get_status_verified):
-                    tqdm.write(f'{get_status_full_message} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
-                elif(post_status_verified):
-                    tqdm.write(f'{post_status_full_message} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
-            else:
-                to_remove.append(dir)
+        if not (get_status_verified or post_status_verified or head_status_verified or options_status_verified or put_status_verified or patch_status_verified or delete_status_verified):
+            if not (args.stdout):          
+                if not (args.filter):
+                    http_message += f'{get_status_message_strip} '
+                    if (three_x_x_codes.get(get_status, False) or three_x_x_codes.get(post_status, False)):
+                        get_3xx_response = await client.get((formatted_dir), follow_redirects=True)
+                        post_3xx_response = await client.post((formatted_dir), follow_redirects=True)
+                        colored_3xx_response = str(colored_status_codes.get(str(get_3xx_response.status_code)[0]))
+                        get_3xx_response_verified = allowed_status_codes.get(f'{get_3xx_response.status_code}', False)
+
+                        if (get_3xx_response_verified):
+                            to_add.append(formatted_dir)
+                            http_message = f'{get_status_message_strip}\033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}]  {reset_color}'
+                        else:
+                            http_message = f'{get_status_message_strip}\033[95m[Redirect]\033[0m [{post_3xx_response.url}] {colored_3xx_response}[{str(post_3xx_response.status_code)}]  {reset_color}'
+                        tqdm.write(f'{http_message}{formatted_dir}')
+                    else:
+                        if formatted_dir[0] != "/" or formatted_dir[0] == "/":
+                            to_remove.append(formatted_dir)
+                        http_message=''
+        
         else:
-            if (args.filter == "all"):
-                if not (args.stdout):
-                    tqdm.write(f'{get_and_post_full_error_message} {dir}')
-            
-            create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-            create_report(dir, 'POST', post_status, post_location)
-
-            if dir[0] != "/" or dir[0] == "/":
-                to_remove.append(dir)
-
+            if not (args.stdout):
+                tqdm.write(f'{http_message}{formatted_dir}')
+    
+        request = []
+        if (args.json_report):
+            request=[
+                       ('GET', get_status), 
+                       ('POST', post_status), 
+                       ('HEAD', head_status), 
+                       ('OPTIONS', options_status),
+                       ('PUT', put_status),
+                       ('PATCH', patch_status),
+                       ('DELETE', delete_status)
+                    ]
+            if (args.json_report == 'all'):
+                report.create_report(request, headers = get_response.headers)
+            elif(args.json_report == 'no-http-headers'):
+                report.create_report(request)
     except Exception as e:
-        # tqdm.write(f"Error processing {dir}: {e}") # for error checking
-        to_remove.append(dir)
+        tqdm.write(f"Error processing {formatted_dir}: {e}") # for error checking
+        to_remove.append(formatted_dir)
 
     
 async def filter_urls():
     if not (args.stdout):
-        print('\nVerifying URLs, please wait')
+        tqdm.write('\nVerifying URLs, please wait')
     start_time = time.time()
     custom_bar_format = "[[\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}% {bar}] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] ]]"
     total_dir_counts = len(all_dirs)
@@ -273,7 +295,6 @@ async def filter_urls():
     if not (args.stdout):
         
         pbar = tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, ncols=80, leave=False)
-
         async with httpx.AsyncClient(follow_redirects=False, headers=headers) as client:
             # with tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False) as pbar:
                 for dir_count in range(0, total_dir_counts, batch_size):
@@ -295,8 +316,8 @@ async def filter_urls():
         end_time = time.time()
         elapsed_time = end_time - start_time
 
+        
         tqdm.write("  \n\033[94m" + f"[PROBED]\033[0m {total_dir_counts} urls in {elapsed_time:.2f} seconds\n")
-        tqdm.write("")
 
         
     else:
