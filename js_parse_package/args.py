@@ -36,7 +36,7 @@ def argparser():
     parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
     parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec (without specifying) which would be actually 24)", type=int, default=12)
     parser.add_argument("--scope", help="specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com", nargs="*")
-    parser.add_argument("-j", "--json-report", help="json report/summary of all urls", action="store_true")
+    parser.add_argument("-j", "--json-report", help="json report/summary of all urls", choices=["all", "no-http-headers"])
     parser.add_argument("-m", "--method", help="Display method(s) options: all, only_safe, only_unsafe, GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD", nargs="+", default=['only_safe'])
 
     file_group = parser.add_mutually_exclusive_group()

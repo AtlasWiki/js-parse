@@ -12,9 +12,13 @@ from .statuses import(
 )
 import httpx, time, asyncio
 from tqdm import tqdm
-from .utils import parse_domain, create_report
+from .utils import parse_domain
 from .args import argparser
-from .shared import all_dirs, dict_report, formatted_urls
+from .shared import all_dirs
+from js_parse_package.json_report import report_maker
+
+args = argparser()
+report = report_maker()
 
 args = argparser()
 to_remove = []
@@ -39,10 +43,10 @@ async def format_dir(dir):
 
 async def fetch_dir(client, dir):
     try:
-        # if (args.json_report):
-        #     report = report_maker()
-        #     initalize parent keys for the dictionary
-        #     report.create_dict(formatted_dir)
+        if (args.json_report):
+            report = report_maker()
+            # initalize parent keys for the dictionary
+            report.create_dict(dir)
         formatted_dir = await format_dir(dir)
         # initalize response objects and other variables
         get_response, post_response, patch_response, put_response, delete_response, head_response, options_response = "","","","","","",""
@@ -259,24 +263,21 @@ async def fetch_dir(client, dir):
             if not (args.stdout):
                 tqdm.write(f'{http_message}{formatted_dir}')
     
-        # api_update_active_score(formatted_dir, api_score, json_points)
-        
-
-        # request = []
-        # if (args.json_report):
-        #     request=[
-        #                ('GET', get_status), 
-        #                ('POST', post_status), 
-        #                ('HEAD', head_status), 
-        #                ('OPTIONS', options_status),
-        #                ('PUT', put_status),
-        #                ('PATCH', patch_status),
-        #                ('DELETE', delete_status)
-        #             ]
-        #     if (args.json_report == 'all'):
-        #         report.create_report(request, headers = get_response.headers)
-        #     elif(args.json_report == 'no-http-headers'):
-        #         report.create_report(request)
+        request = []
+        if (args.json_report):
+            request=[
+                       ('GET', get_status), 
+                       ('POST', post_status), 
+                       ('HEAD', head_status), 
+                       ('OPTIONS', options_status),
+                       ('PUT', put_status),
+                       ('PATCH', patch_status),
+                       ('DELETE', delete_status)
+                    ]
+            if (args.json_report == 'all'):
+                report.create_report(request, headers = get_response.headers)
+            elif(args.json_report == 'no-http-headers'):
+                report.create_report(request)
     except Exception as e:
         tqdm.write(f"Error processing {formatted_dir}: {e}") # for error checking
         to_remove.append(formatted_dir)
