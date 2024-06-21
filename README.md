@@ -17,6 +17,7 @@
 + **Fast HTTP Probing**: uses concurrent requests and allow you to optionally set the requests per sec.
 + **Filtering modes**: comes with filtering of specific status codes when doing http probing.
 + **HTTP Probing Report Summary**: saves a json report summary of response status codes and header information of the urls.
++ **Method Selection**: allows you to select which methods to use. default is only_safe
 <br>
 
 ## Installation:
