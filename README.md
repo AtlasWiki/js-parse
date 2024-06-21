@@ -53,11 +53,13 @@ or
                       does not probe third-party urls with request methods (default: False)
 -n, --no-logo         hides logo (default: False)
 -r REQUESTS, --requests REQUESTS
-                      the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec (without specifying)      
-                      which would be actually 24) (default: 12)
+                      the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec (without specifying) which would be actually 24) (default: 12)
 --scope [SCOPE ...]   specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com (default: None)
--j, --json-report     json report/summary of all urls (default: False)
--m, --merge           create file and merge all urls into it (default: False)
+-j {all,no-http-headers}, --json-report {all,no-http-headers}
+                      json report/summary of all urls (default: None)
+-m METHOD [METHOD ...], --method METHOD [METHOD ...]
+                      Display method(s) options: all, only_safe, only_unsafe, GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD (default: ['only_safe'])
+-o, --merge           create file and merge all urls into it (default: False)
 -i, --isolate         create multiple files and store urls where they were parsed from (default: False)
 ```
 
