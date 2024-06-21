@@ -20,12 +20,30 @@ args = argparser()
 to_remove = []
 to_add = []
 
+async def format_dir(dir):
+    if (dir == "https://api.wepwn.ma/contact"): 
+        pass   
+    else:
+        if dir[:4] == "http":
+            formatted_dir = dir
+            if (args.remove_third_parties):
+                curr_domain = parse_domain(formatted_dir)
+                target_domain = parse_domain(args.url) 
+                if (curr_domain != target_domain):
+                    formatted_dir = ""
+        elif dir[0] != "/":
+            formatted_dir = args.url + f'/{dir}'
+        else:
+            formatted_dir = args.url + dir
+    return formatted_dir
+
 async def fetch_dir(client, dir):
     try:
         # if (args.json_report):
         #     report = report_maker()
         #     initalize parent keys for the dictionary
         #     report.create_dict(formatted_dir)
+        formatted_dir = await format_dir(dir)
         # initalize response objects and other variables
         get_response, post_response, patch_response, put_response, delete_response, head_response, options_response = "","","","","","",""
         get_status, post_status, patch_status, put_status, delete_status, head_status, options_status = "","","","","","",""
@@ -266,7 +284,7 @@ async def fetch_dir(client, dir):
     
 async def filter_urls():
     if not (args.stdout):
-        print('\nVerifying URLs, please wait')
+        tqdm.write('\nVerifying URLs, please wait')
     start_time = time.time()
     custom_bar_format = "[[\033[94m{desc}\033[0m: [{n}/{total} {percentage:.0f}% {bar}] \033[31mTime-Taking:\033[0m [{elapsed}] \033[31mTime-Remaining:\033[0m [{remaining}] ]]"
     total_dir_counts = len(all_dirs)
@@ -297,8 +315,8 @@ async def filter_urls():
         end_time = time.time()
         elapsed_time = end_time - start_time
 
-        print("")
-        print("  \033[94m" + f"[PROBED]\033[0m {total_dir_counts} urls in {elapsed_time:.2f} seconds\n")
+        
+        tqdm.write("  \n\033[94m" + f"[PROBED]\033[0m {total_dir_counts} urls in {elapsed_time:.2f} seconds\n")
 
         
     else:

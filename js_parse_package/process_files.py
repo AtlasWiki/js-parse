@@ -38,10 +38,10 @@ def process_files_with_tqdm():
                 
         pbar.update(1)
             
-    print("")
+   
     end_time = time.time()
     elapsed_time = end_time - start_time
-    print("  \033[94m" + f"[COMPLETED]\033[0m {total_items} files in {elapsed_time:.2f} seconds")
+    tqdm.write("  \n\033[94m" + f"[COMPLETED]\033[0m {total_items} files in {elapsed_time:.2f} seconds")
  
 
 def process_files_without_tqdm():
