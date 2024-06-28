@@ -256,7 +256,7 @@ async def fetch_dir(client, dir):
                         tqdm.write(f'{http_message}{formatted_dir}')
                     else:
                         if formatted_dir[0] != "/" or formatted_dir[0] == "/":
-                            to_remove.append(formatted_dir)
+                            to_remove.append(dir)
                         http_message=''
         
         else:
@@ -279,8 +279,8 @@ async def fetch_dir(client, dir):
             elif(args.json_report == 'no-http-headers'):
                 report.create_report(request)
     except Exception as e:
-        tqdm.write(f"Error processing {formatted_dir}: {e}") # for error checking
-        to_remove.append(formatted_dir)
+        # tqdm.write(f"Error processing {formatted_dir}: {e}") # for error checking
+        to_remove.append(dir)
 
     
 async def filter_urls():
