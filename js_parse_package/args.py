@@ -38,6 +38,8 @@ def argparser():
     parser.add_argument("--scope", help="specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com", nargs="*")
     parser.add_argument("-j", "--json-report", help="json report/summary of all urls", choices=["all", "no-http-headers"])
     parser.add_argument("-m", "--method", help="Display method(s) options: all, only_safe, only_unsafe, GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD", nargs="+", default=['only_safe'])
+    parser.add_argument("-c", "--clean", help="print all urls in absolute format. convert all relative urls to absolute", action="store_true")
+
 
     file_group = parser.add_mutually_exclusive_group()
     file_group.add_argument("-o", "--merge", help="create file and merge all urls into it", action="store_true")

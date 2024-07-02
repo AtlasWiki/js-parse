@@ -34,7 +34,10 @@ def stdout_dirs():
             print(f"\033[32m[{y}]\033[0m", x)
         print("\n \033[31m[URLS]\033[0m")
     for dir in all_dirs:
-        print(clean_urls(dir))
+        if (args.clean):
+            print(clean_urls(dir))
+        else:
+            print(dir)
     
     
 
