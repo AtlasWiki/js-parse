@@ -59,16 +59,24 @@ def store_urls(file_url):
                         directories.write(dir + ',\n')
             elif (args.merge):
                 dir = quoted_dir.strip('"')
-                all_dirs.append(dir)  # No comma for the last directory
+                all_dirs.append(dir) 
             else:
                 dir = quoted_dir.strip('"')
                 all_dirs.append(dir)
                 url_locations[dir] = file_name
         finally:
-             if(args.save):
+            if (args.save_each or args.save_one):
                 parsed_files_directory_path = f"""{target["domain"]}/parsed-files/"""
                 if not (os.path.exists(parsed_files_directory_path)):
                     os.makedirs(parsed_files_directory_path)
+                    if (args.save_one):
+                        with open(parsed_files_directory_path + 'merged-jsfile.txt', "w") as file:
+                            file.write('')
+                
+
+
+
+                
     
     return num_urls
 def write_files():

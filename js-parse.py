@@ -55,7 +55,7 @@ def verify_files():
         process_files_with_tqdm()
         stdout_dirs()
         print(f'\n\n\n\033[31m[PARSED]\033[0m {len(all_dirs)} urls\n')
-    if(args.save):
+    if(args.save_one or args.save_each):
         move_stored_files()
         print('saved js files')
         print('done')

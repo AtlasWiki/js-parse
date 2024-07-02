@@ -39,12 +39,19 @@ def stdout_dirs():
         else:
             print(dir)
     
-    
-
 def move_stored_files():
-    for prettyfile in range(1, len(pretty_files) + 1):
+    if args.save_each:
+        for prettyfile in range(1, len(pretty_files) + 1):
+            source_path = os.getcwd()
+            source_filename = f"pretty-file{prettyfile}.txt"
+            source_file = os.path.join(source_path, source_filename)
+            destination_dir = os.path.join(source_path, f"""{target["domain"]}/parsed-files""")
+            destination_file = os.path.join(destination_dir, source_filename)
+            os.replace(source_file, destination_file)
+
+    elif args.save_one:
         source_path = os.getcwd()
-        source_filename = f"pretty-file{prettyfile}.txt"
+        source_filename = f"merged-jsfile.txt"
         source_file = os.path.join(source_path, source_filename)
         destination_dir = os.path.join(source_path, f"""{target["domain"]}/parsed-files""")
         destination_file = os.path.join(destination_dir, source_filename)

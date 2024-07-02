@@ -29,7 +29,6 @@ def argparser():
     ''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] url\u001b[0m')
 
     parser.add_argument("url", help="\u001b[96mspecify url with the scheme of http or https")
-    parser.add_argument("--save", help="save prettified js files", action="store_true")
     parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
     parser.add_argument("-f", "--filter", help="removes false positives with http probing/request methods (use at your own risk). 4xx does not include 404 and 405", choices=['all', '1xx', '2xx', '3xx', '4xx', '5xx', 'forbidden'])
     parser.add_argument("--remove-third-parties", help="does not probe third-party urls with request methods", action="store_true")
@@ -40,12 +39,14 @@ def argparser():
     parser.add_argument("-m", "--method", help="Display method(s) options: all, only_safe, only_unsafe, GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD", nargs="+", default=['only_safe'])
     parser.add_argument("-c", "--clean", help="print all urls in absolute format. convert all relative urls to absolute", action="store_true")
 
-
     file_group = parser.add_mutually_exclusive_group()
     file_group.add_argument("-o", "--merge", help="create file and merge all urls into it", action="store_true")
     file_group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
 
-    
+    save_group = parser.add_mutually_exclusive_group()
+    save_group.add_argument("--save-one", help="merge all saved js files into one", action="store_true")
+    save_group.add_argument("--save-each", help="save individual js files", action="store_true")
+
     args = parser.parse_args()
     if args.method:
        args.method = ",".join(args.method).split(",")

@@ -40,9 +40,12 @@ def fetch_js(url):
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
     req = requests.get(url, headers=headers).text
     req = jsbeautifier.beautify(req)
-    if(args.save):
+    if (args.save_each):
         pretty_files.append(url)
         with open(f"pretty-file{len(pretty_files)}.txt", 'w', encoding="utf-8") as prettyJsFile:
             prettyJsFile.write(url + '\n') 
             prettyJsFile.write(req) 
+    elif (args.save_one):
+        with open(f"merged-jsfile.txt", 'a', encoding="utf-8") as prettyJsFile:
+            prettyJsFile.write(req + "\n") 
     return req
