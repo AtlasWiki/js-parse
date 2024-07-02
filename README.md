@@ -46,7 +46,6 @@ or
 ## Options:
 ```
 -h, --help            show this help message and exit
---save                save prettified js files (default: False)
 -s, --stdout          stdout friendly, displays urls only in stdout compatibility. also known as silent mode (default: False)
 -f {all,1xx,2xx,3xx,4xx,5xx,forbidden}, --filter {all,1xx,2xx,3xx,4xx,5xx,forbidden}
                       removes false positives with http probing/request methods (use at your own risk). 4xx does not include 404 and 405 (default: None)
@@ -60,8 +59,11 @@ or
                       json report/summary of all urls (default: None)
 -m METHOD [METHOD ...], --method METHOD [METHOD ...]
                       Display method(s) options: all, only_safe, only_unsafe, GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD (default: ['only_safe'])
+-c, --clean           print all urls in absolute format. convert all relative urls to absolute (default: False)
 -o, --merge           create file and merge all urls into it (default: False)
--i, --isolate         create multiple files and store urls where they were parsed from (default: False)
+-b, --isolate         create multiple files and store urls where they were parsed from (default: False)
+--save-one            merge all saved js files into one (default: False)
+--save-each           save individual js files (default: False)
 ```
 
 ## Some Example Usages:

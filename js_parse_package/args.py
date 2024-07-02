@@ -41,7 +41,7 @@ def argparser():
 
     file_group = parser.add_mutually_exclusive_group()
     file_group.add_argument("-o", "--merge", help="create file and merge all urls into it", action="store_true")
-    file_group.add_argument("-i", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
+    file_group.add_argument("-b", "--isolate", help="create multiple files and store urls where they were parsed from", action="store_true")
 
     save_group = parser.add_mutually_exclusive_group()
     save_group.add_argument("--save-one", help="merge all saved js files into one", action="store_true")
